@@ -2,9 +2,9 @@ CAN Id 0x100        4 vars      {minimumChargeCurrent, minimumBatteryVoltage,   
 ~~~~~~~~~~~~                    {maximumBatteryVoltage, chargingRateIndication  }
 
 name                            bitPos  bits    byteOrder   byte    factor  range       units
-minimumChargeCurrent            0       8       Intel       [0]	    1       0|255       amps
-minimumBatteryVoltage       	24	    16	    Motorola    [2,3]   0.01    0|600.00    volts
-maximumBatteryVoltage       	40	    16	    Motorola    [4,5]   0.01    0|600.00    volts
+minimumChargeCurrent            0       8       Intel       [0]     1       0|255       amps
+minimumBatteryVoltage           24              Motorola    [2,3]   0.01    0|600.00    volts
+maximumBatteryVoltage           40      16      Motorola    [4,5]   0.01    0|600.00    volts
 chargingRateIndication          48      8       Intel       [6]	    1       0|100       %
 
 code
