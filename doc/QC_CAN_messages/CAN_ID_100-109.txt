@@ -1,0 +1,120 @@
+CAN Id 0x100        4 vars      {minimumChargeCurrent, minimumBatteryVoltage,   }
+~~~~~~~~~~~~                    {maximumBatteryVoltage, chargingRateIndication  }
+
+name                            bitPos  bits    byteOrder   byte    factor  range       units
+minimumChargeCurrent            0       8       Intel       [0]	    1       0|255       amps
+minimumBatteryVoltage       	24	    16	    Motorola    [2,3]   0.01    0|600.00    volts
+maximumBatteryVoltage       	40	    16	    Motorola    [4,5]   0.01    0|600.00    volts
+chargingRateIndication          48      8       Intel       [6]	    1       0|100       %
+
+code
+~~~~
+minimumChargeCurrent = data[0]
+minimumBatteryVoltage = (data[2]<<8 + data[3])*0.01
+maximumBatteryVoltage = (data[4]<<8 + data[5])*0.01
+chargingRateIndication = data[6]
+
+
+
+CAN Id 0x101    4 vars          {maximumChargeTime10sBit, maximumChargeTime1minBit, }
+~~~~~~~~~~~~                    {estimatedChargeTime, ratedBatteryCapacity          }
+
+name                            bitPos  bits    byteOrder   byte    factor  range       units
+maxChargingTime10sBit           8       8       Intel       [1]     10      0|2540      secs
+maxChargingTime1minBit          16      8       Intel       [2]     1       0|255       mins
+estimatedChargingTime           24      8       Intel       [3]     1       0|254       mins
+ratedBatteryCapacity            48      16      Motorola    [5,6]   0.11    0|100       kWh
+
+code
+~~~~
+maxChargingTime10sBit = data[1]*10
+maxChargingTime1minBit = data[2]
+estimatedChargingTime = data[3]
+ratedBatteryCapacity = (data[5]<<8 + data[6])*0.11
+
+
+
+
+CAN Id 0x102    3 variables	{targetBatteryVoltage, chargeCurrentRequest, chargeCurrentRequest[EVStateOfCharge SOC%}
+
+CAN Id 0x102    14 vars         {controlProtocolNumberEV, targetBatteryVoltage,     }
+~~~~~~~~~~~~                    (, 5], status[5], SOC 	}
+
+name                            bitPos  bits    byteOrder	byte    factor	range       units
+controlProtocolNumberEV         0       8       Intel       [0]     1       0|255       -
+targetBatteryVoltage            16      16      Motorola    [1,2]   0.01    0|600       volts
+chargingCurrentRequest          24      8       Intel       [3]     1       0|255       amps
+
+faultBits for vehicle           32      8       Intel       [4]     1       0|255       0/1
+batteryVoltageDeviation	        36      1
+highBatteryTemperature          35      1
+batteryCurrentDeviation         34      1
+batteryUndervoltage             33      1
+batteryOvervoltage              32      1
+
+statusBits for vehicle          40      8       Intel       [5]     1       0|255       0/1
+EVnormalStopRequest             44      1
+EVcontactorOpen                 43      1
+EVchargingFault	                42      1
+EVnotParked                     41      1
+EVchargePermission              40      1
+
+EVStateOfCharge SOC%            48      8       Intel       [6]     1       0|100       %
+
+code
+~~~~
+controlProtocolNumberEV=data[0]
+targetBatteryVoltage=data[1]<<8 + data[2]
+chargingCurrentRequest=data[3]
+evStateOfCharge=data[6]
+
+faultBits=data[4] & 0x1F
+batteryVoltageDeviation=(faultBits & 0x10) == 0x10
+highBatteryTemperature=(faultBits  & 0x08) == 0x08
+batteryCurrentDeviation=(faultBits & 0x04) == 0x04
+batteryUndervoltage=(faultBits & 0x02) == 0x02
+batteryOvervoltage=(fautlBits  & 0x01) == 0x01
+
+statusBits=data[5] & x1F
+EVnormalStopRequest=(statusBits & 0x10) == 0x10
+EVcontactorOpen=(statusBits & 0x08) == 0x08
+EVchargingFault=(statusBits & 0x04) == 0x04
+EVnotParked=(statusBits & 0x02) == 0x02
+EVchargePermission=(statusBits & 0x01) == 0x01
+
+
+CAN Id 0x108    4 vars  {eVContactorWeldingDetection, availableOutputVoltage,   }
+~~~~~~~~~~~~            {availableOutputCurrent, thresholdVoltage               }
+
+name                            bitPos  bits    byteOrder   byte    factor  range   units
+eVContactorWeldingDetection     0       8       Intel       [0]     1       0|255   amps
+availableOutputVoltage          16      16      Motorola    [1,2]   0.01    0|600   volts
+availableOutputCurrent          24      8       Intel       [3]     1       0|255   amps
+thresholdVoltage                40      16      Motorola    [4,5]   0.01    0|600 	volts
+
+code
+~~~~
+
+
+CAN Id 0x109    11 variables    {controlProtocolNumberQC, outputVoltage, outputCurrent, }
+~~~~~~~~~~~~                    {statusByte, chargingTimeSec, chargingTimeMin           }
+
+name                            bitPos  bits    byteOrder   byte    factor  range   units
+controlProtocolNumberQC         0       8       Intel       [0]     1       0|255
+outputVoltage                   16      16      Motorola    [1,2]   0.01    0|600   volts
+outputCurrent                   2       8       Intel       [3]     1       0|255   amps
+
+statusByte (for charger)        40      8       Intel       [5]     1       0|255
+statusChargerStopControl        45      1       Intel       [5]     1       0|1
+faultChargingSystemMalfunction  44      1       Intel       [5]     1       0|1
+faultBatteryIncompatibility     43      1       Intel       [5]     1       0|1
+statusVehicleConnectorLock      42      1       Intel       [5]     1       0|1
+faultStationMalfunction         41      1       Intel       [5]     1       0|1
+statusStation                   40      1       Intel       [5]     1       0|1
+
+remainingChargingTime           48      8       Intel       [6]     10      0|2540	secs
+remainingChargingTime1minBit    56      8       Intel       [7]     1       0|255   mins
+
+code
+~~~~
+

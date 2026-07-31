@@ -1,0 +1,24 @@
+CAN Id 0x100	4 variables	{minimumChargeCurrent, minimumBatteryVoltage, maximumBatteryVoltage, maximumBatteryVoltage}
+	
+Details:-
+
+name[0]=minimumChargeCurrent	BitPos=0	Length=8 bits	ByteOrder=Intel		Factor=1	Range 0-255 amps
+minimumChargeCurrent = data[0]
+
+
+name[1]=minimumBatteryVoltage	BitPos=24	Length=16 bits	ByteOrder=Motorola	Factor=0.01	Range=0-600.00 volts
+minimumBatteryVoltage = (data[2]<<8 + data[3])*0.01
+
+name[2]=maximumBatteryVoltage	BitPos=40	Length=16 bits	ByteOrder=Motorola	Factor=0.01	Range=0-600.00 volts
+maximumBatteryVoltage = (data[4]<<8 + data[5])*0.01
+
+name[3]=chargingRateIndication	BitPos=48	Length=8 bits	ByteOrder=Intel		Factor=1	Range=0-100 %
+chargingRateIndication = data[6]
+
+
+BO_ 256 x100: 8 Vehicle
+ SG_ MaximumBatteryVoltage : 39|16@0+ (0.01,0) [0|600] "V" Vector__XXX
+ SG_ ConstantOfChargingRateIndication : 48|8@1+ (1,0) [0|100] "%" Vector__XXX
+ SG_ MinimumChargeCurrent : 0|8@1+ (1,0) [0|255] "A" Vector__XXX
+ SG_ MinumumBatteryVoltage : 23|16@0+ (0.01,0) [0|600] "V" Vector__XXX
+

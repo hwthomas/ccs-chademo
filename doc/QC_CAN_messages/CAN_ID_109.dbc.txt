@@ -1,0 +1,20 @@
+CAN Id 0x109	4 variables	{MinimumChargeCurrent, MinimumBatteryVoltage, MaximumBatteryVoltage, MaximumBatteryVoltage}
+	
+
+Name=MinimumChargeCurrent	BitPos=0	Length=8 bits	ByteOrder=Intel (1-byte only!)	Factor=1	Range 0-255 amps
+
+MinimumChargeCurrent = data[0]
+
+
+ BO_ 265 x109: 8 QuickChargeStation
+ SG_ ControlProtocolNumberQC : 0|8@1+ (1,0) [0|255] "-" Vector__XXX
+ SG_ OutputVoltage : 15|16@0+ (0.01,0) [0|600] "V" Vector__XXX
+ SG_ OutputCurrent : 24|8@1+ (1,0) [0|255] "A" Vector__XXX
+ SG_ StatusChargerStopControl : 45|1@1+ (1,0) [0|1] "status" Vector__XXX
+ SG_ FaultChargingSystemMalfunction : 44|1@1+ (1,0) [0|1] "status" Vector__XXX
+ SG_ FaultBatteryIncompatibility : 43|1@1+ (1,0) [0|1] "status" Vector__XXX
+ SG_ StatusVehicleConnectorLock : 42|1@1+ (1,0) [0|1] "status" Vector__XXX
+ SG_ FaultStationMalfunction : 41|1@1+ (1,0) [0|1] "status" Vector__XXX
+ SG_ StatusStation : 40|1@1+ (1,0) [0|1] "status" Vector__XXX
+ SG_ RemainingChargingTime10sBit : 48|8@1+ (10,0) [0|2540] "seconds" Vector__XXX
+ SG_ RemainingChargingTime1minBit : 56|8@1+ (1,0) [0|255] "minutes" Vector__XXX
