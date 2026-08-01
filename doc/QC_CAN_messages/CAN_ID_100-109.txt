@@ -5,7 +5,7 @@ name                            bitPos  bits    byteOrder   byte    factor  rang
 minimumChargeCurrent            0       8       Intel       [0]     1       0|255       amps
 minimumBatteryVoltage           24              Motorola    [2,3]   0.01    0|600.00    volts
 maximumBatteryVoltage           40      16      Motorola    [4,5]   0.01    0|600.00    volts
-chargingRateIndication          48      8       Intel       [6]	    1       0|100       %
+chargingRateIndication          48      8       Intel       [6]     1       0|100       %
 
 code
 ~~~~
@@ -34,38 +34,35 @@ ratedBatteryCapacity = (data[5]<<8 + data[6])*0.11
 
 
 
+CAN Id 0x102    14 vars         {controlProtocolNumberEV, targetBatteryVoltage, chargeCurrentRequest,   }
+~~~~~~~~~~~~                    {faultBits[5], statusBits[5], stateOfChargeSOC                          }
 
-CAN Id 0x102    3 variables	{targetBatteryVoltage, chargeCurrentRequest, chargeCurrentRequest[EVStateOfCharge SOC%}
-
-CAN Id 0x102    14 vars         {controlProtocolNumberEV, targetBatteryVoltage,     }
-~~~~~~~~~~~~                    (, 5], status[5], SOC 	}
-
-name                            bitPos  bits    byteOrder	byte    factor	range       units
+name                            bitPos  bits    byteOrder   byte    factor  range       units
 controlProtocolNumberEV         0       8       Intel       [0]     1       0|255       -
 targetBatteryVoltage            16      16      Motorola    [1,2]   0.01    0|600       volts
-chargingCurrentRequest          24      8       Intel       [3]     1       0|255       amps
+chargeCurrentRequest            24      8       Intel       [3]     1       0|255       amps
 
 faultBits for vehicle           32      8       Intel       [4]     1       0|255       0/1
-batteryVoltageDeviation	        36      1
+batteryVoltageDeviation         36      1
 highBatteryTemperature          35      1
 batteryCurrentDeviation         34      1
 batteryUndervoltage             33      1
 batteryOvervoltage              32      1
 
 statusBits for vehicle          40      8       Intel       [5]     1       0|255       0/1
-EVnormalStopRequest             44      1
-EVcontactorOpen                 43      1
-EVchargingFault	                42      1
-EVnotParked                     41      1
-EVchargePermission              40      1
+evNormalStopRequest             44      1
+evContactorOpen                 43      1
+evChargingFault                 42      1
+evNotParked                     41      1
+evChargePermission              40      1
 
-EVStateOfCharge SOC%            48      8       Intel       [6]     1       0|100       %
+EVStateOfChargeSOC              48      8       Intel       [6]     1       0|100       %
 
 code
 ~~~~
 controlProtocolNumberEV=data[0]
 targetBatteryVoltage=data[1]<<8 + data[2]
-chargingCurrentRequest=data[3]
+chargeCurrentRequest=data[3]
 evStateOfCharge=data[6]
 
 faultBits=data[4] & 0x1F
@@ -90,10 +87,11 @@ name                            bitPos  bits    byteOrder   byte    factor  rang
 eVContactorWeldingDetection     0       8       Intel       [0]     1       0|255   amps
 availableOutputVoltage          16      16      Motorola    [1,2]   0.01    0|600   volts
 availableOutputCurrent          24      8       Intel       [3]     1       0|255   amps
-thresholdVoltage                40      16      Motorola    [4,5]   0.01    0|600 	volts
+thresholdVoltage                40      16      Motorola    [4,5]   0.01    0|600   volts
 
 code
 ~~~~
+
 
 
 CAN Id 0x109    11 variables    {controlProtocolNumberQC, outputVoltage, outputCurrent, }
@@ -112,7 +110,7 @@ statusVehicleConnectorLock      42      1       Intel       [5]     1       0|1
 faultStationMalfunction         41      1       Intel       [5]     1       0|1
 statusStation                   40      1       Intel       [5]     1       0|1
 
-remainingChargingTime           48      8       Intel       [6]     10      0|2540	secs
+remainingChargingTime           48      8       Intel       [6]     10      0|2540  secs
 remainingChargingTime1minBit    56      8       Intel       [7]     1       0|255   mins
 
 code
