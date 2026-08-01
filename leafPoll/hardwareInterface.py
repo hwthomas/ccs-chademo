@@ -38,7 +38,7 @@ class hardwareInterface():
     def addToTrace(self, s):
         if not self.traceEnabled:
             return
-        self.callbackAddToTrace("[CHADEMOINTERFACE] " + s)
+        self.callbackAddToTrace("[CHADEMO_INTERFACE] " + s)
 
     def displayStateAndSoc(self, infonumber, state, soc):
         # no output display device used
@@ -100,7 +100,7 @@ class hardwareInterface():
 
 #
 # These are the CHAdeMO sequence signals, which need to be activated
-# in the fsmPev code at appropriate points (to be determined)
+# in the fsmCdM code at appropriate points (to be determined)
 #
     def setSS1_On(self):
         self.addToTrace("Switching Charge Signal SS1 ON.")
@@ -138,6 +138,7 @@ class hardwareInterface():
 #
 #   This is a first attempt at providing a delay during which the Watchdog is continually fired
 #   It defines a preDelay and postDelay, with the time in-between as a 2mS/2mS square wave
+#   It probably won't be used to start with, until the asyncio/non-blocking code gets sorted
 #
     def fireWdog(self, preDelay, postDelay, totalDelay): 
         squareTime = totalDelay - (preDelay + postDelay)
