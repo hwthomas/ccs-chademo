@@ -478,7 +478,13 @@ class hardwareInterface():
                 sys.exit(0)
 
     def mainfunction_chademo(self):
-        message = self.canbus.recv(0)    # non-blocking check for CAN=bus message
+        message = self.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
+        #
+        # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
+        # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
+        # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
+        # They do NOT agree with those used by johannes_huber in pyPlc/hardwareinterface.py !!!
+        #
 
         if message:
             if message.arbitration_id == 0x100:
@@ -498,7 +504,9 @@ class hardwareInterface():
             msg = can.Message(arbitration_id=0x109, data=[ 10, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
+        ############################################## HWT edit  ########################
         if message.arbitration_id == 0x102:
+            new_targetVoltage = (message.data[1]<<8 + message.data[2])  ##HWT edit here
             vtg = (message.data[2] << 8) + message.data[1]
             if self.accuMaxVoltage != vtg:
                  self.addToTrace("CHAdeMO: Set target voltage to %d V" % vtg)
