@@ -1,0 +1,5 @@
+The dbc files related to the QC-CAN bus have been updated between May 25th 2026 and Jun 1st 2026 
+to correct the StateOfCharge (SOC%) and change all Motorola (big-endian) to Intel (little-endian)
+for 16-bit data values.
+
+These changes have now been applied to the expanded CAN-IDs in file CAN_ID_100-109.txt.
