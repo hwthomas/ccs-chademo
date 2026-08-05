@@ -6,15 +6,17 @@
 #
 
 #------------------------------------------------------------
-#import pyPlcHomeplug
+#import addressManager
+#import connMgr
 #import fsmEvse
 #import fsmPev
+#import pyPlcHomeplug
+
+import fsmCHdeMo
 from pyPlcModes import *
-#import addressManager
 import time
 import subprocess
 import hardwareInterface
-#import connMgr
 
 
 class pyPlcWorker():
@@ -41,7 +43,8 @@ class pyPlcWorker():
             strLabel = "(unknown version. 'git describe --tags' failed.)"
         self.workerAddToTrace("[pyPlcWorker] Software version " + strLabel)
         if (self.mode == C_PEV_MODE):
-            self.pev = fsmPev.fsmPev(self.addressManager, self.connMgr, self.workerAddToTrace, self.hardwareInterface, self.showStatus)
+            self.cdm = fsmPev.fsmCHdeMo(None, None, self.workerAddToTrace, self.hardwareInterface, self.showStatus)
+    
     def __del__(self):
         if (self.mode == C_PEV_MODE):
             try:

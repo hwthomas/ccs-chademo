@@ -318,15 +318,32 @@ class hardwareInterface():
                 self.cableChecker.setPretendedMode()
 
         self.loopcounter = 0
-        self.outvalue = 0       # keeps track internally of GPIO digital outputs
-                                # bit 0 = pinCP (CCS setState_B = 0; setState_C = 1)
-                                # bit 1 = pinSS1 (CHAdeMO setSS1 signal [off = 0; on = 2] )
-                                # bit 2 = pinSS2 (CHAdeMO setSS2 signal [off = 0; on = 4] )
-                                # bit 3 = pinWdg (RPi Watchdog - set HIGH/LOW on each pass )
+        self.outvalue = 0       # keep track internally of GPIO digital outputs
+                                # bit 0 = pinCP  (State_B = 0; State_C = 1)
+                                # bit 1 = pinSS1 (SS1 signal [off = 0; on = 2] )
+                                # bit 2 = pinSS2 (SS2 signal [off = 0; on = 4] )
+                                # bit 3 = pinWdg (RPi Watchdog: flip HIGH/LOW  )
 
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
 
+        # The following class variables are for testing the CHAdeMO hardware
+        self.minChargeCurrent = 0           # CAN-ID 0x100
+        self.minBatteryVoltage = 0
+        self.maxBatteryVoltage = 0
+        self.chargeRateIndication = 100
+    
+        self.maxChargeTimeMins = 0          # CAN-ID 0x101
+        self.estChargeTimeMins = 0
+        self.ratedCapacitykWh = 0
+        
+        self.targetBatteryVolts = 0         # CAN-ID 0x102
+        self.chargeCurrentRequest = 0
+        self.evFaultBits = 0
+        self.evStatusBits = 0
+        self.evStateOfCharge = 0
+        # end of CHAdeMO current variables
+        
         self.simulatedSoc = 20.0    # percent
         self.demoAuthenticationCounter = 0
         self.enabled = True         # Charging enabled
@@ -349,7 +366,8 @@ class hardwareInterface():
         self.maxChargerCurrent = 10
         self.chargerVoltage = 0
         self.chargerCurrent = 0
-        self.infonumber = 0                 # this block is new, and only for Charger project?
+        
+        self.infonumber = 0     # these are new, and only for Charger project?
         self.focccicapeCycleCounter = 0
         self.evseModePowerSupplyTargetVoltage = 0
         self.evseModePowerSupplyTargetCurrent = 0
@@ -483,34 +501,73 @@ class hardwareInterface():
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
-        # They do NOT agree with those used by johannes_huber in pyPlc/hardwareinterface.py !!!
+        # These dbc files have been updated (June 2026) & all 16-bit values are now Intel format
         #
-
         if message:
             if message.arbitration_id == 0x100:
-                vtg = (message.data[1] << 8) + message.data[0]
-                if self.accuVoltage != vtg:
-                    self.addToTrace("CHAdeMO: Set battery voltage to %d V" % vtg)
-                self.accuVoltage = vtg
-            if self.capacity != message.data[6]:
-                 self.addToTrace("CHAdeMO: Set capacity to %d" % message.data[6])
-            self.capacity = message.data[6]
+                new_value = message.data[0]
+                if self.minChargeCurrent != new_value:
+                    self.addToTrace("CHAdeMO: minChargeCurrent = %d Amps" % new_value)
+                    self.minChargeCurrent = new_value
+ 
+                new_value = (message.data[3]<<8 + message.data[2]) * 0.01
+                if(self.minBatteryVolts != new_value):
+                    self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
+                    self.minBatteryVolts = new_value
+                    
+                new_value = (message.data[5]<<8 + message.data[4]) * 0.01
+                if(self.maxBatteryVolts != new_value):
+                    self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
+                    self.maxBatteryVolts = new_value
 
+            if message.arbitration_id == 0x101:
+                new_value = (message.data[6]<<8 + message.data[5]) * 0.11
+                if(self.ratedCapacitykWh != new_value):
+                    self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
+                    self.ratedCapacitykWh = new_value
+                    
+            if message.arbitration_id == 0x102:
+                new_value = (message.data[2]<<8 + message.data[1]) * 0.01
+                if(self.targetBatteryVolts != new_value):
+                    self.addToTrace("CHAdeMO: targetBatteryVolts = %d V" % new_value)
+                    self.targetBatteryVolts = new_value
+                    
+                new_value = message.data[3]
+                if(self.chargeCurrentRequest != new_value):
+                    self.addToTrace("CHAdeMO: chargeCurrentRequest = %d A" % new_value)
+                    self.chargeCurrentRequest = new_value
+                    
+                new_value = message.data[4]
+                if(self.evFaultBits != new_value):
+                    self.addToTrace("CHAdeMO: evFaultBits = %X" % new_value)
+                    self.evFaultBits = new_value
+                    
+                new_value = message.data[5]
+                if(self.evStatusBits != new_value):
+                    self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
+                    self.evStatusBits = new_value
+
+                new_value = message.data[6]
+                if(self.evStateOfCharge != message.data[6]):
+                    self.addToTrace("CHAdeMO: evStateOfCharge = %d" % new_value)
+                    self.evStateOfCharge = new_value
+
+            # now send charger parameters back to the car for validation 
             msg = can.Message(arbitration_id=0x108, data=[ 0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
-            #Report unspecified version 10, this makes our custom implementation send the momentary
-            #battery voltage in 0x100 bytes 0 and 1
+
             status = 4 if self.maxChargerVoltage > 0 else 0  #report connector locked
             msg = can.Message(arbitration_id=0x109, data=[ 10, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
         ############################################## HWT edit  ########################
         if message.arbitration_id == 0x102:
-            new_targetVoltage = (message.data[1]<<8 + message.data[2])  ##HWT edit here
+            new_value = (message.data[2]<<8 + message.data[1])
+            if(  ##HWT edit here...
             vtg = (message.data[2] << 8) + message.data[1]
-            if self.accuMaxVoltage != vtg:
-                 self.addToTrace("CHAdeMO: Set target voltage to %d V" % vtg)
-            self.accuMaxVoltage = vtg
+            if self.accuMaxVoltage != new_value:
+                 self.addToTrace("CHAdeMO: Set target voltage to %d V" % new_value)
+            self.accuMaxVoltage = new_value
 
             if self.accuMaxCurrent != message.data[3]:
                 self.addToTrace("CHAdeMO: Set current request to %d A" % message.data[3])
