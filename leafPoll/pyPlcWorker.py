@@ -12,7 +12,7 @@
 #import fsmPev
 #import pyPlcHomeplug
 
-import fsmCHdeMo
+import fsmCdM
 from pyPlcModes import *
 import time
 import subprocess
@@ -43,7 +43,7 @@ class pyPlcWorker():
             strLabel = "(unknown version. 'git describe --tags' failed.)"
         self.workerAddToTrace("[pyPlcWorker] Software version " + strLabel)
         if (self.mode == C_PEV_MODE):
-            self.cdm = fsmPev.fsmCHdeMo(None, None, self.workerAddToTrace, self.hardwareInterface, self.showStatus)
+            self.cdm = fsmCdM.fsmCdM(None, None, self.workerAddToTrace, self.hardwareInterface, self.showStatus)
     
     def __del__(self):
         if (self.mode == C_PEV_MODE):
@@ -81,7 +81,7 @@ class pyPlcWorker():
         self.hardwareInterface.mainfunction()   # call hardwareInterface to read CAN inputs, etc
  
         if (self.mode == C_PEV_MODE):
-            self.pev.mainfunction()             # call the pev state machine
+            self.cdm.mainfunction()             # call the CHAdeMO state machine
 
         # Set Watchdog output LOW at end of main loop
         self.hardwareInterface.setWdog_Off()
@@ -96,5 +96,5 @@ class pyPlcWorker():
         if (strAction == "space"):
             print("stopping the charge process")
             if (hasattr(self, 'pev')):
-                self.pev.stopCharging()
+                self.cdm.stopCharging()
 
