@@ -4,7 +4,6 @@ Ref https://github.com/dalathegreat/leaf_can_bus_messages (1st Jun 2026+ version
 
 CAN Id 0x100        4 vars      
 ~~~~~~~~~~~~
-
 name                            bitPos  bits    byteOrder   byte    factor  range       units
 minimumChargeCurrent            0       8       Intel       [0]     1       0|255       amps
 unused                          8       8       Intel       [1]     1       0|255       -
@@ -22,7 +21,6 @@ chargingRateIndication = data[6]
 
 CAN Id 0x101    4 vars
 ~~~~~~~~~~~~
-
 name                            bitPos  bits    byteOrder   byte    factor  range       units
 maxChargingTime10sBit           8       8       Intel       [1]     10      0|2540      secs
 maxChargingTime1minBit          16      8       Intel       [2]     1       0|255       mins
@@ -39,7 +37,6 @@ ratedBatteryCapacity = (data[6]<<8 + data[5])*0.11
 
 CAN Id 0x102    14 vars
 ~~~~~~~~~~~~
-
 name                            bitPos  bits    byteOrder   byte    factor  range       units
 controlProtocolNumberEV         0       8       Intel       [0]     1       0|255       -
 targetBatteryVoltage            8      16       Intel       [1,2]   0.01    0|600       volts
@@ -55,11 +52,12 @@ batteryVoltageDeviation         36      1
 statusBits for vehicle          40      8       Intel       [5]     1       0|255       0/1
 evReadyToCharge                 40      1
 evNotInPark                     41      1
-evCHdeMOVersion                 42      1
+evCdMversion                    42      1
 evContactorOpen                 43      1
 evNormalStopRequest             44      1
 
 evStateOfChargeSOC              48      8       Intel       [6]     1       0|100       %
+
 
 code
 ~~~~
@@ -69,7 +67,7 @@ chargeCurrentRequest=data[3]
 evStateOfCharge=data[6]
 
 faultBits=data[4] & 0x1F
-batteryOvervoltage=(fautlBits  & 0x01) == 0x01
+batteryOvervoltage=(faultBits  & 0x01) == 0x01
 batteryUndervoltage=(faultBits & 0x02) == 0x02
 batteryCurrentDeviation=(faultBits & 0x04) == 0x04
 highBatteryTemperature=(faultBits  & 0x08) == 0x08
@@ -85,7 +83,6 @@ evNormalStopRequest=(statusBits & 0x10) == 0x10
 
 CAN Id 0x108    4 vars  {eVContactorWeldingDetection, availableOutputVoltage,   }
 ~~~~~~~~~~~~            {availableOutputCurrent, thresholdVoltage               }
-
 name                            bitPos  bits    byteOrder   byte    factor  range   units
 eVContactorWeldingDetection     0       8       Intel       [0]     1       0|255   amps
 availableOutputVoltage          8       16      Intel       [1,2]   0.01    0|600   volts
@@ -98,7 +95,6 @@ code
 
 CAN Id 0x109    11 variables    {controlProtocolNumberQC, outputVoltage, outputCurrent, }
 ~~~~~~~~~~~~                    {statusByte, chargingTimeSec, chargingTimeMin           }
-
 name                            bitPos  bits    byteOrder   byte    factor  range   units
 controlProtocolNumberQC         0       8       Intel       [0]     1       0|255
 outputVoltage                   8       16      Intel       [1,2]   0.01    0|600   volts
