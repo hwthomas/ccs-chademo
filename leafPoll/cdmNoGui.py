@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# The non-GUI variant of the PEV side
+# The non-GUI variant of the PEV side with CHAdeMO interface only
 
 import time
 import pyPlcWorker

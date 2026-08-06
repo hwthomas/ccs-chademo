@@ -501,7 +501,7 @@ class hardwareInterface():
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
-        # These dbc files have been updated (June 2026) & all 16-bit values are now Intel format
+        # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
         #
         if message:
             if message.arbitration_id == 0x100:
