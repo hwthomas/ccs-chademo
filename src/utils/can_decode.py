@@ -5,15 +5,13 @@
 # HardwareInterface module from myPlc (IDs 0x100, 0x101, 0x102)
 # Unrecognised IDs are ignored and not decoded/printed
 #
-
 # simple log file 'short.log' extracted from 'ZE1-chademo-charging.log'
-# in 'https://github.com/dalathegreat/EV-CANlogs' repo
+# in 'https://github.com/dalathegreat/EV-CANlogs' repo. Layout as per-
 
-#-1688467643333862,00000100,false,Rx,0,8,06,00,00,00,B3,01,FF,00,
-#-1688467643323844,00000101,false,Rx,0,8,00,E4,00,00,00,00,00,00,
-#-1688467643314866,00000102,false,Rx,0,8,02,9A,01,73,00,81,8F,00,
-#-1688467643303801,00000200,false,Rx,0,8,FF,00,00,00,FA,00,1A,FF,
-#-1688467643294827,00000110,false,Rx,0,8,01,00,00,00,00,00,00,00,
+# -1688467643234759,00000100,false,Rx,0,8,06,00,00,00,B3,01,FF,00,
+# -1688467643224751,00000101,false,Rx,0,8,00,E4,00,00,00,00,00,00,
+# -1688467643214763,00000102,false,Rx,0,8,02,9A,01,73,00,81,8F,00,
+# -1688467643203801,00000200,false,Rx,0,8,FF,00,00,00,FA,00,1A,FF,
 
 import can      # for message structure, construction and transmission 
 import time     # for sleep and timings
@@ -45,8 +43,8 @@ class can_decode():
     def chademo(message = ''):
         # 
         # message = self.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
-        # in operation, the canbus message is received from the hardware interface
-        # for this test, we are passed each message as each line is read from the log file
+        # In operation, the canbus message is received from the hardware interface
+        # For this test, we are passed each message as each line is read from the log file
         #
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
@@ -111,11 +109,7 @@ class can_decode():
 pass    # end of can_decode class
 
 
-    
-
-  
-
-startTime_ms = round(time.time()*1000)
+ startTime_ms = round(time.time()*1000)
 
 # These logging and status functions used as defaults when can_decode class instance created
     
@@ -135,23 +129,43 @@ if __name__ == "__main__":
     can_file = "short.log"                  # select short file to read from or..
     # can_file = "ZE1-chademo-charging.log" # full file from Dala/EV-CANlogs repo
 
-    # read from can log file. Note: 'line' is a string of the *whole* line
+    # read from can log file. Note: 'line' is a string of the *whole* line, including separators
+    # eg   "-1688467643250712,00000109,false,Rx,0,8,01,7B,01,64,01,05,D7,24,"
+    
+    # use a can.Message object for decoding and subsequent sending
+    # see https://python-can.readthedocs.io/en/stable/message.html
+
+    # first, read in and decode the can.log
     with open(can_file) as file:
         for line in file:                   # iterate through each line in the file
-            items = line.split(',')         # pick comma separated items from the line
-            id = bytes(items[1], 'utf-8')   # known position of arbitration_ID
-            dlc = bytes(items[5], 'utf-8')  # ditto for data length code (dlc)
-            data = []
+            items = line.split(',')         # <list> of comma separated <str>
+            #id = bytes(items[1], 'utf-8')   # convert arbitration_ID to <bytes>
+            id = int(bytes(items[1], 'utf-8'))      # arbitration id to be supplied as an <int>
+            dlc = int(bytes(items[5], 'utf-8'))     # ditto for data length code (dlc)
+            print(int(id))
+            data_bytes = []                 # build data_bytes as <list>
             for i in range(6,14):
-                data.append(bytes(items[i], 'utf-8'))   # select data bytes
-            print("data = ", data)
+                data_bytes.extend(bytes(items[i], 'utf-8') )  # select data bytes
+            
+            db = bytes(data_bytes)
+            print("type of data_bytes = ", type(data_bytes))
+            msg = can.Message(arbitration_id=id, dlc=dlc, data=db)
+            print(msg)
 
-            # construct a can.Message object for decoding (and eventually sending)
-            msg = can.Message(arbitration_id=id, data, is_extended_id=False)
+            
+            #for i in range(0,7):
+            #    print(data_bytes[i])
+            
+            #ba = bytes(data_bytes)
+            #print("byte array = ", ba)
+            
+            #bytes_merged = b''.join(data_bytes)
+            #byte_data  = bytearray(bytes_merged)
+    
             
             # decode the message using cdc.can_decode function
-            cdc.chademo(msg)
+            #cdc.chademo(msg)
 
-            sleep(0.1)      # loop every 100mS until file end reached 
+            time.sleep(0.1)      # loop every 100mS until file end reached 
     
     print("finished decoding file ", can_file)
