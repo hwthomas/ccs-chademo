@@ -15,13 +15,31 @@
 
 import can      # for message structure, construction and transmission 
 import time     # for sleep and timings
+from configmodule import getConfigValue, getConfigValueBool
 
 class can_decode():
+    
+    def addToTrace(self, s):
+        if not self.traceEnabled:
+            return
+        self.callbackAddToTrace("[CAN_DECODE] " + s)
+
+ 
+    def showStatus(s, selection=""):
+        pass
+
     
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None):
         self.callbackAddToTrace = callbackAddToTrace
         self.callbackShowStatus = callbackShowStatus
-        
+        self.showStatus = callbackShowStatus
+  
+        # Cache the trace flag once at startup. It is used by addToTrace()
+        # which is called many times per second; we avoid re-reading the
+        # config file on every call. Must be set before any addToTrace() call,
+        # so it stays right at the top of __init__.
+        self.traceEnabled = getConfigValueBool("evse_printtrace")
+       
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = 0           # CAN-ID 0x100
         self.minBatteryVoltage = 0
@@ -40,7 +58,7 @@ class can_decode():
         # end of CHAdeMO current variables
         
 
-    def chademo(message = ''):
+    def chademo(self, message):
         # 
         # message = self.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
         # In operation, the canbus message is received from the hardware interface
@@ -51,6 +69,7 @@ class can_decode():
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
         # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
         #
+        print("chademo called with message = ", message)
         if message:
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
@@ -59,14 +78,14 @@ class can_decode():
                     self.minChargeCurrent = new_value
  
                 new_value = (message.data[3]<<8 + message.data[2]) * 0.01
-                if(self.minBatteryVolts != new_value):
+                if(self.minBatteryVoltage != new_value):
                     self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
-                    self.minBatteryVolts = new_value
+                    self.minBatteryVoltage = new_value
                     
                 new_value = (message.data[5]<<8 + message.data[4]) * 0.01
-                if(self.maxBatteryVolts != new_value):
+                if(self.maxBatteryVoltage != new_value):
                     self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
-                    self.maxBatteryVolts = new_value
+                    self.maxBatteryVoltage = new_value
 
             if message.arbitration_id == 0x101:
                 new_value = (message.data[6]<<8 + message.data[5]) * 0.11
@@ -109,22 +128,22 @@ class can_decode():
 pass    # end of can_decode class
 
 
- startTime_ms = round(time.time()*1000)
+startTime_ms = round(time.time()*1000)
 
 # These logging and status functions used as defaults when can_decode class instance created
     
-def cbAddToTrace(s):
+def cdcAddToTrace(s):
     currentTime_ms = round(time.time()*1000)
     dT_ms = currentTime_ms - startTime_ms
     print("[" + str(dT_ms) + "ms] " + s)
 
-def cbShowStatus(s, selection=""):
+def cdcShowStatus(s, selection=""):
     pass
 
 if __name__ == "__main__":
     print("Testing can_decode using a can.log file for input...")
     # create a can_decode instance, using cbAddToTrace and cbShowStatus functions above
-    cdc = can_decode(cbAddToTrace, cbShowStatus)
+    cdc = can_decode(cdcAddToTrace, cdcShowStatus)
 
     can_file = "short.log"                  # select short file to read from or..
     # can_file = "ZE1-chademo-charging.log" # full file from Dala/EV-CANlogs repo
@@ -139,32 +158,19 @@ if __name__ == "__main__":
     with open(can_file) as file:
         for line in file:                   # iterate through each line in the file
             items = line.split(',')         # <list> of comma separated <str>
-            #id = bytes(items[1], 'utf-8')   # convert arbitration_ID to <bytes>
-            id = int(bytes(items[1], 'utf-8'))      # arbitration id to be supplied as an <int>
+            id = int(bytes(items[1], 'utf-8'), 16)      # arbitration id to be supplied as an <int>
             dlc = int(bytes(items[5], 'utf-8'))     # ditto for data length code (dlc)
-            print(int(id))
-            data_bytes = []                 # build data_bytes as <list>
+            data = []                 # build data_bytes as <list>
             for i in range(6,14):
-                data_bytes.extend(bytes(items[i], 'utf-8') )  # select data bytes
+                data.extend(bytes(items[i], 'utf-8') )  # select all data bytes
             
-            db = bytes(data_bytes)
-            print("type of data_bytes = ", type(data_bytes))
-            msg = can.Message(arbitration_id=id, dlc=dlc, data=db)
-            print(msg)
+            data_bytes = bytearray(data)
+            
+            msg = can.Message(arbitration_id=id, dlc=dlc, data=data_bytes)
+            # print(msg)
 
-            
-            #for i in range(0,7):
-            #    print(data_bytes[i])
-            
-            #ba = bytes(data_bytes)
-            #print("byte array = ", ba)
-            
-            #bytes_merged = b''.join(data_bytes)
-            #byte_data  = bytearray(bytes_merged)
-    
-            
             # decode the message using cdc.can_decode function
-            #cdc.chademo(msg)
+            cdc.chademo(msg)
 
             time.sleep(0.1)      # loop every 100mS until file end reached 
     
