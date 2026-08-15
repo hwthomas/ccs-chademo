@@ -69,20 +69,24 @@ class can_decode():
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
         # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
         #
-        print("chademo called with message = ", message)
+        #print("chademo called with message = ", message)
         if message:
+            print(type(message.data))
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
                 if self.minChargeCurrent != new_value:
                     self.addToTrace("CHAdeMO: minChargeCurrent = %d Amps" % new_value)
                     self.minChargeCurrent = new_value
  
-                new_value = (message.data[3]<<8 + message.data[2]) * 0.01
+                new_value = (int(message.data[3]<<8) + int(message.data[2])) * 0.01
+                print("minBatV = ", new_value)
                 if(self.minBatteryVoltage != new_value):
                     self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
                     self.minBatteryVoltage = new_value
                     
-                new_value = (message.data[5]<<8 + message.data[4]) * 0.01
+                new_value = (int(message.data[5]*256) + int((message.data[4])) )* 0.01
+                print("digits = ", message.data[5], message.data[4])
+                print("maxBatV = ", new_value)
                 if(self.maxBatteryVoltage != new_value):
                     self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
@@ -159,15 +163,15 @@ if __name__ == "__main__":
         for line in file:                   # iterate through each line in the file
             items = line.split(',')         # <list> of comma separated <str>
             id = int(bytes(items[1], 'utf-8'), 16)      # arbitration id to be supplied as an <int>
-            dlc = int(bytes(items[5], 'utf-8'))     # ditto for data length code (dlc)
-            data = []                 # build data_bytes as <list>
-            for i in range(6,14):
-                data.extend(bytes(items[i], 'utf-8') )  # select all data bytes
+            dlc = int(bytes(items[5], 'utf-8'), 16)     # ditto for data length code (dlc)
+            data = bytearray(8)             # build data as <bytearray> of size 8
+            for i in range(6,13):
+                data[i-6] = int(items[i], 16)   # convert items to hex integers
             
-            data_bytes = bytearray(data)
+            print(data)
             
-            msg = can.Message(arbitration_id=id, dlc=dlc, data=data_bytes)
-            # print(msg)
+            msg = can.Message(arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
+            print(msg)
 
             # decode the message using cdc.can_decode function
             cdc.chademo(msg)
