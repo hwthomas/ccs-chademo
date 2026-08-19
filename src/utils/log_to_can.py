@@ -16,7 +16,7 @@ import os
 
 if __name__ == "__main__":
     print("Testing log_to_can using a can.log file for input...")
-
+    
     # use a can.Message object for decoding and subsequent sending
     # see https://python-can.readthedocs.io/en/stable/message.html
 
@@ -38,8 +38,12 @@ if __name__ == "__main__":
 
     print("Opening log file ", can_file)
     with open(can_file) as file:
+        startTime_ms = round(time.time()*1000)
         for line in file:                   # iterate through each line in the file
             time.sleep(0.1)                 # wait 100mS before next message
+            currentTime_ms = round(time.time()*1000)
+            ts = currentTime_ms - startTime_ms   # timestamp for CAN message
+
             items = line.split(',')         # <list> of comma separated <str>
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[5], 'utf-8'), 16)     # ditto for data length code (dlc)
@@ -47,7 +51,7 @@ if __name__ == "__main__":
             for i in range(6,13):
                 data[i-6] = int(items[i], 16)   # convert items to hex integers
 
-            msg = can.Message(arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
+            msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
             print(msg)
 
             try:
