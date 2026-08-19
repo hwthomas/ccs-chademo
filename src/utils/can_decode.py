@@ -15,6 +15,8 @@
 
 import can      # for message structure, construction and transmission 
 import time     # for sleep and timings
+import sys
+
 from configmodule import getConfigValue, getConfigValueBool
 
 class can_decode():
@@ -24,10 +26,8 @@ class can_decode():
             return
         self.callbackAddToTrace("[CAN_DECODE] " + s)
 
- 
     def showStatus(s, selection=""):
         pass
-
     
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None):
         self.callbackAddToTrace = callbackAddToTrace
@@ -60,10 +60,6 @@ class can_decode():
 
     def chademo(self, message):
         # 
-        # message = self.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
-        # In operation, the canbus message is received from the hardware interface
-        # For this test, we are passed each message as each line is read from the log file
-        #
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
@@ -71,7 +67,6 @@ class can_decode():
         #
         #print("chademo called with message = ", message)
         if message:
-            print(type(message.data))
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
                 if self.minChargeCurrent != new_value:
@@ -145,37 +140,27 @@ def cdcShowStatus(s, selection=""):
     pass
 
 if __name__ == "__main__":
-    print("Testing can_decode using a can.log file for input...")
+    print("Testing can_decode using CAN-bus input...")
     # create a can_decode instance, using cbAddToTrace and cbShowStatus functions above
     cdc = can_decode(cdcAddToTrace, cdcShowStatus)
 
-    can_file = "short.log"                  # select short file to read from or..
-    # can_file = "ZE1-chademo-charging.log" # full file from Dala/EV-CANlogs repo
-
-    # read from can log file. Note: 'line' is a string of the *whole* line, including separators
-    # eg   "-1688467643250712,00000109,false,Rx,0,8,01,7B,01,64,01,05,D7,24,"
-    
     # use a can.Message object for decoding and subsequent sending
     # see https://python-can.readthedocs.io/en/stable/message.html
-
-    # first, read in and decode the can.log
-    with open(can_file) as file:
-        for line in file:                   # iterate through each line in the file
-            items = line.split(',')         # <list> of comma separated <str>
-            id = int(bytes(items[1], 'utf-8'), 16)      # arbitration id to be supplied as an <int>
-            dlc = int(bytes(items[5], 'utf-8'), 16)     # ditto for data length code (dlc)
-            data = bytearray(8)             # build data as <bytearray> of size 8
-            for i in range(6,13):
-                data[i-6] = int(items[i], 16)   # convert items to hex integers
-            
-            print(data)
-            
-            msg = can.Message(arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
-            print(msg)
-
-            # decode the message using cdc.can_decode function
-            cdc.chademo(msg)
-
-            time.sleep(0.1)      # loop every 100mS until file end reached 
     
-    print("finished decoding file ", can_file)
+    with can.Bus() as bus:
+        while True:
+            msg = can.recv(0)   # non-blocking wait for canbus message
+
+            if msg:
+                print(msg)
+
+
+                # message = self.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
+                # In operation, the canbus message is received from the hardware interface
+        
+                # decode the message using cdc.can_decode function
+                # cdc.chademo(msg)
+
+            time.sleep(0.01)      # loop every 10mS until end of data reached 
+    
+    print("finished decoding data input ")
