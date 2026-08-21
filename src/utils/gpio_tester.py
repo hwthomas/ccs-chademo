@@ -82,7 +82,7 @@ try:
     for output in outputs:
         output.show()
         
-    print("Enter a command in set {s, n, p, 0, 1, q} \n>", sep='', end='')
+    print("Enter a command in set {s(how), n(ext), p(revious), 0(->0), 1(->1), q(uit)} \n>", sep='', end='')
     index = 0
     output = outputs[index]                    # select initial output
     last = len(outputs) - 1                    # define last index
