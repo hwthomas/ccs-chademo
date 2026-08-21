@@ -40,7 +40,7 @@ if __name__ == "__main__":
     with open(can_file) as file:
         startTime_ms = round(time.time()*1000)
         for line in file:                   # iterate through each line in the file
-            time.sleep(0.1)                 # wait 100mS before next message
+            time.sleep(0.02)                # wait 20mS before next message
             currentTime_ms = round(time.time()*1000)
             ts = currentTime_ms - startTime_ms   # timestamp for CAN message
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[5], 'utf-8'), 16)     # ditto for data length code (dlc)
             data = bytearray(8)             # build data as <bytearray> of size 8
-            for i in range(6,13):
+            for i in range(6,13):           # log file has data[8] in bytes 0..7
                 data[i-6] = int(items[i], 16)   # convert items to hex integers
 
             msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
