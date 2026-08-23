@@ -5,9 +5,12 @@
 # simple log file 'short.log' extracted from 'ZE1-chademo-charging.log'
 # in 'https://github.com/dalathegreat/EV-CANlogs' repo. Layout as per-
 
-# -1688467643234759,00000100,false,Rx,0,8,06,00,00,00,B3,01,FF,00,
-# -1688467643224751,00000101,false,Rx,0,8,00,E4,00,00,00,00,00,00,
-# -1688467643214763,00000102,false,Rx,0,8,02,9A,01,73,00,81,8F,00,
+# -1688467625333184,00000100,false,Rx,0,8,06,00,00,00,B3,01,FF,00,
+# -1688467625323152,00000101,false,Rx,0,8,00,E4,00,00,00,00,00,00,
+# -1688467625313174,00000102,false,Rx,0,8,02,9A,01,6D,00,81,8F,00,
+# -1688467625303120,00000200,false,Rx,0,8,FF,00,00,00,FA,00,1A,FF,
+# -1688467625246875,00000108,false,Rx,0,8,00,F4,01,87,B3,01,00,00,
+# -1688467625241862,00000109,false,Rx,0,8,01,7C,01,64,01,05,D5,24,
 
 import can      # for message structure, construction and transmission
 import time     # for sleep and timings
