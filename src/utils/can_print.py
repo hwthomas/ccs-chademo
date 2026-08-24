@@ -11,9 +11,6 @@ import can
 import time
 import os
 
-count = 0
-can_id = ""
-
 print('\n\rCAN Rx...Tx test')
 print('Bring up CAN0....')
 os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
@@ -33,7 +30,7 @@ try:
         message = bus.recv()    # Blocking wait until a message is received.
 
         c = '{0:f} {1:03X} {2:02X} '.format(message.timestamp, message.arbitration_id, message.dlc)
-        s=' ... '
+        s=''
         for i in range(message.dlc ):
             s +=  '{0:02X} '.format(message.data[i])
 
