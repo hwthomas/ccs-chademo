@@ -31,16 +31,17 @@ print('Ready')
 try:
     while True:
         message = bus.recv()    # Blocking wait until a message is received.
-        
-        c = '{0:f} {1:x} {2:x} '.format(message.timestamp, message.arbitration_id, message.dlc)
+
+        c = '{0:f} {1:03X} {2:02X} '.format(message.timestamp, message.arbitration_id, message.dlc)
         s=' ... '
         for i in range(message.dlc ):
-            s +=  '{0:x} '.format(message.data[i])
-            print(' {}'.format(c+s))
-        
+            s +=  '{0:02X} '.format(message.data[i])
+
+        print(' {}'.format(c+s))
+
         # pause 10mS, then loop for next message or until Ctrl-C
         time.sleep(0.01) 
-        
+
 except KeyboardInterrupt:
     # Catch keyboard interrupt
     print('\n\rKeyboard interrupt') 
