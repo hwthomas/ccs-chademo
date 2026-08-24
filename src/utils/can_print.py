@@ -11,7 +11,7 @@ import can
 import time
 import os
 
-print('\n\rCAN Rx...Tx test')
+print('\n\rCAN Rx...Print loop')
 print('Bring up CAN0....')
 os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
 os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
