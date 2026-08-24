@@ -55,8 +55,8 @@ class can_decode():
         self.maxBatteryVoltage = 0
         self.chargeRateIndication = 100
         
-        self.maxChargeTimeMins = 0          # CAN-ID 0x101
-        self.estChargeTimeMins = 0
+        self.maxChargeTime = 0              # CAN-ID 0x101
+        self.estChargeTime = 0
         self.ratedCapacitykWh = 0
             
         self.targetBatteryVoltage = 0       # CAN-ID 0x102
@@ -101,6 +101,11 @@ class can_decode():
                     self.maxBatteryVoltage = new_value
 
             if message.arbitration_id == 0x101:
+                new_value = (message.data[1]) * 10/60
+                if(self.maxChargeTime != new_value):
+                    self.addToTrace("0x101: maxChargeTime = %d mins" % new_value)
+                    self.maxChargeTime = new_value
+
                 new_value = (message.data[5]*256 + message.data[6]) * 0.11
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
