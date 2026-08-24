@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# This is simple CAN receive-then-transmit python program loop. 
+# This is simple CAN receive-then-print python program loop. 
 # All messages received are printed out on screen.
 # For use with Waveshare RS485/CAN boards on the Raspberry Pi
 #
@@ -38,8 +38,8 @@ try:
             s +=  '{0:x} '.format(message.data[i])
             print(' {}'.format(c+s))
         
-        # pause 100mS, then loop for next message or until Ctrl-C
-        time.sleep(0.100) 
+        # pause 10mS, then loop for next message or until Ctrl-C
+        time.sleep(0.01) 
         
 except KeyboardInterrupt:
     # Catch keyboard interrupt

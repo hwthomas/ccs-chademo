@@ -1,7 +1,7 @@
 #
 # This program reads a CAN log from a file written in csv format
-# and decodes thos CAN_IDs that are used in the CHAdeMO charging
-# sequnce (IDs 0x100, 0x101, 0x102, 0x108, 0x109)
+# and decodes those CAN_IDs that are used in the CHAdeMO charging
+# sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109)
 # Unrecognised IDs are ignored and not decoded/printed
 #
 # simple log file 'short.log' extracted from 'ZE1-chademo-charging.log'
@@ -85,7 +85,7 @@ class can_decode():
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
                 if self.minChargeCurrent != new_value:
-                    self.addToTrace("CHAdeMO: minChargeCurrent = %d Amps" % new_value)
+                    self.addToTrace("CHAdeMO: minChargeCurrent = %d A" % new_value)
                     self.minChargeCurrent = new_value
  
                 new_value = (int(message.data[2]*256) + int(message.data[3])) * 0.01
