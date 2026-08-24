@@ -36,9 +36,8 @@ if __name__ == "__main__":
     # Note: 'line' is a string of the *whole* line, including the separators
     # eg   "-1688467643250712,00000109,false,Rx,0,8,01,7B,01,64,01,05,D7,24,"
 
-    can_file = "short.log"                  # select short file to read from, or...
-    #  can_file = "ZE1-chademo-charging.log"     # full file from Dala/EV-CANlogs repo
-
+    can_file = sys.argv[1]                  # select short file to read from, or...
+                                            # full file from Dala/EV-CANlogs repo
     print("Opening log file ", can_file)
     with open(can_file) as file:
         startTime_ms = round(time.time()*1000)
