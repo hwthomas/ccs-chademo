@@ -29,20 +29,21 @@ try:
     while True:
         message = bus.recv()    # Blocking wait until a message is received.
 
-        c = '{0:f} {1:03X} {2:02X} '.format(message.timestamp, message.arbitration_id, message.dlc)
+        # format timestamp, ID, and dlc first
+        c = "{0:f} {1:03X} {2:02X} ".format(message.timestamp, message.arbitration_id, message.dlc)
+        # then format the data bytes with single space separator
         s=''
         for i in range(message.dlc ):
-            s +=  '{0:02X} '.format(message.data[i])
+            s +=  "{0:02X} ".format(message.data[i])
 
-        print(' {}'.format(c+s))
-
+        print(" {}".format(c+s))    # space separator between fields of each line in log
+    
         # pause 10mS, then loop for next message or until Ctrl-C
         time.sleep(0.01) 
 
 except KeyboardInterrupt:
     # Catch keyboard interrupt
     print('\n\rKeyboard interrupt') 
-
 
 print('\n\rShutting bus and CAN0 down') 
 bus.shutdown()

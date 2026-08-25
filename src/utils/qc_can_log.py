@@ -9,6 +9,8 @@
 # Make sure Python-CAN is installed first - pip3 install python-can
 # then 'import can'  as listed below
 
+# This program is not complete - currently prints only to stdout
+
 import can
 import time
 import os
@@ -36,7 +38,9 @@ with open(can_file, 'rw') as file:
         while True:
             message = bus.recv()    # Blocking wait until a message is received.
 
+                # format timestamp, ID, and dlc first
                 c = '{0:f} {1:03X} {2:02X} '.format(message.timestamp, message.arbitration_id, message.dlc)
+                # then format the data bytes with single space separator
                 s=''
                 for i in range(message.dlc ):
                     s +=  '{0:02X} '.format(message.data[i])
