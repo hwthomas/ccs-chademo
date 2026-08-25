@@ -28,8 +28,8 @@ GPIO.setmode(GPIO.BOARD)                # set GPIO for board (physical pin) numb
 
 # define a list of all GPIO outputs to be tested. Note:- GND & Output are opposite way round for 40/39
 outputs = []
-outputs.append(output("d1/SS1", 29, 0)) # pin 29 (GPIO 05); pin 30 GND: # d1/SS1 - Charge sequence signal 1
-outputs.append(output("d2/SS2", 13, 0)) # pin 13 (GPIO 27); pin 14 GND: # d2/SS2 - Charge sequence signal 2
+outputs.append(output("d1/SS1", 13, 0)) # pin 13 (GPIO 27); pin 14 GND: # d1/SS1 - Charge sequence signal 1
+outputs.append(output("d2/SS2", 29, 0)) # pin 29 (GPIO 05); pin 30 GND: # d2/SS2 - Charge sequence signal 2
 outputs.append(output("CCS.CP", 40, 0)) # pin 40 (GPIO 21); pin 39 GND: # CP - CCS ControlPilot line
 outputs.append(output("RPi.Wdog", 33, 0))   # pin 33 (GPIO 13); pin 34 GND: # RPi Watchdog charge pump (future)
 
@@ -39,7 +39,7 @@ for output in outputs:      # process all the outputs defined above
 #
 # Test rig operates as follows:-
 # A message is printed, followed by the outputs to be tested (name, pinNo, and current state {0/1}
-# A command prompt ('>') is then printed on a new line (eg "d2/SS2, pin 13, {0}", "\n >"). 
+# A command prompt ('>') is then printed on a new line (eg "d1/SS1, pin 13, {0}", "\n >"). 
 # Single-character keyboard inputs can then be accepted :-
 # 0     turn output off
 # 1     turn output on
