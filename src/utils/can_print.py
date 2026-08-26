@@ -26,11 +26,15 @@ except OSError:
 print('Ready')
 
 try:
+    startTime_ms = round(time.time()*1000)          # startTime for message loop
     while True:
         message = bus.recv()    # Blocking wait until a message is received.
 
+        currentTime_ms = round(time.time()*1000)    # update current time
+        local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message
+        
         # format timestamp, ID, and dlc first
-        c = "{0:f} {1:03X} {2:02X} ".format(message.timestamp, message.arbitration_id, message.dlc)
+        c = "{0:f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
         # then format the data bytes with single space separator
         s=''
         for i in range(message.dlc ):
