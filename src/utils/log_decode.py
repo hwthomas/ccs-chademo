@@ -65,10 +65,10 @@ class can_decode():
         self.evStatusBits = -1
         self.evStateOfCharge = -1
         
-        self.maxChargerVoltage = -1          # CAN-ID 0x108
+        self.maxChargerVoltage = -1         # CAN-ID 0x108
         self.maxChargerCurrent = -1
         
-        self.chargerVoltage = -1             # CAN-ID 0x109
+        self.chargerVoltage = -1            # CAN-ID 0x109
         self.chargerCurrent = -1
         # end of CHAdeMO test variables
         
@@ -78,11 +78,9 @@ class can_decode():
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
-        # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
-        # However....
-        # Note that all 16-bit (2-byte) data values are in big-endian format,
-        # given that this appears to be how these log files were generated
-        
+        # These dbc files were updated (June 2026) & all 16-bit values are now Intel format, and
+        # multiplication factor changed from 0,01 to 1
+       
         if message:
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
@@ -90,12 +88,12 @@ class can_decode():
                     self.addToTrace("0x100: minChargeCurrent = %d A" % new_value)
                     self.minChargeCurrent = new_value
  
-                new_value = (int(message.data[2]*256) + int(message.data[3])) * 0.01
+                new_value = int(message.data[2]) + int(message.data[3])*256
                 if(self.minBatteryVoltage != new_value):
                     self.addToTrace("0x100: minBatteryVolts = %d V" % new_value)
                     self.minBatteryVoltage = new_value
                     
-                new_value = (int(message.data[4]*256) + int((message.data[5])) )* 0.01
+                new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.maxBatteryVoltage != new_value):
                     self.addToTrace("0x100: maxBatteryVolts = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
@@ -106,13 +104,13 @@ class can_decode():
                     self.addToTrace("0x101: maxChargeTime = %d mins" % new_value)
                     self.maxChargeTime = new_value
 
-                new_value = (message.data[5]*256 + message.data[6]) * 0.11
+                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.11
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
                     
             if message.arbitration_id == 0x102:
-                new_value = (message.data[1]*256 + message.data[2]) * 0.01
+                new_value = (int(message.data[1]) + int(message.data[2])*256)
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("0x102: targetBatteryVoltage = %d V" % new_value)
                     self.targetBatteryVoltage = new_value
@@ -138,7 +136,7 @@ class can_decode():
                     self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x108:
-                new_value = (message.data[1]*256 + message.data[2]) * 0.01
+                new_value = (int(message.data[1]) + int(message.data[2])*256)
                 if(self.maxChargerVoltage != new_value):
                     self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
                     self.maxChargerVoltage = new_value
@@ -149,7 +147,7 @@ class can_decode():
                     self.maxChargerCurrent = new_value
 
             if message.arbitration_id == 0x109:
-                new_value = (message.data[1]*256 + message.data[2]) * 0.01
+                new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
                     self.addToTrace("0x109: chargerVoltage = %d V" % new_value)
                     self.chargerVoltage = new_value
