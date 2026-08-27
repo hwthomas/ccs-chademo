@@ -50,26 +50,26 @@ class can_decode():
         self.traceEnabled = getConfigValueBool("evse_printtrace")
        
         # The following class variables are for testing the CHAdeMO hardware
-        self.minChargeCurrent = 0           # CAN-ID 0x100
-        self.minBatteryVoltage = 0
-        self.maxBatteryVoltage = 0
+        self.minChargeCurrent = -1          # CAN-ID 0x100
+        self.minBatteryVoltage = -1
+        self.maxBatteryVoltage = -1
         self.chargeRateIndication = 100
         
-        self.maxChargeTime = 0              # CAN-ID 0x101
-        self.estChargeTime = 0
-        self.ratedCapacitykWh = 0
+        self.maxChargeTime = -1             # CAN-ID 0x101
+        self.estChargeTime = -1
+        self.ratedCapacitykWh = -1
             
-        self.targetBatteryVoltage = 0       # CAN-ID 0x102
-        self.chargeCurrentRequest = 0
-        self.evFaultBits = 0
-        self.evStatusBits = 0
-        self.evStateOfCharge = 0
+        self.targetBatteryVoltage = -1      # CAN-ID 0x102
+        self.chargeCurrentRequest = -1
+        self.evFaultBits = -1
+        self.evStatusBits = -1
+        self.evStateOfCharge = -1
         
-        self.maxChargerVoltage = 0          # CAN-ID 0x108
-        self.maxChargerCurrent = 0
+        self.maxChargerVoltage = -1          # CAN-ID 0x108
+        self.maxChargerCurrent = -1
         
-        self.chargerVoltage = 0             # CAN-ID 0x109
-        self.chargerCurrent = 0
+        self.chargerVoltage = -1             # CAN-ID 0x109
+        self.chargerCurrent = -1
         # end of CHAdeMO test variables
         
 
