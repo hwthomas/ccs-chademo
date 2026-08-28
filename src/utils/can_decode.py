@@ -49,13 +49,20 @@ class can_decode():
         self.maxChargeTimeMins = -1         # CAN-ID 0x101
         self.estChargeTimeMins = -1
         self.ratedCapacitykWh = -1
-            
+
         self.targetBatteryVolts = -1        # CAN-ID 0x102
         self.chargeCurrentRequest = -1
-        self.evFaultBits = -
+        self.evFaultBits = -1
         self.evStatusBits = -1
         self.evStateOfCharge = -1
-        # end of CHAdeMO current variables
+
+        self.maxChargerVoltage = -1         # CAN-ID 0x108
+        self.maxChargerCurrent = -1
+        
+        self.chargerVoltage = -1            # CAN-ID 0x109
+        self.chargerCurrent = -1
+
+        # end of CHAdeMO test variables
         
 
     def chademo(self, message):

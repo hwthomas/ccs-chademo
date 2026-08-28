@@ -70,6 +70,7 @@ class can_decode():
         
         self.chargerVoltage = -1            # CAN-ID 0x109
         self.chargerCurrent = -1
+
         # end of CHAdeMO test variables
         
 
@@ -194,9 +195,9 @@ if __name__ == "__main__":
         for line in file:                   # iterate through each line in the file
             time.sleep(0.01)                # wait 10mS before next message
             currentTime_ms = round(time.time()*1000)
-            ts = currentTime_ms - startTime_ms   # timestamp for CAN message
 
             items = line.split(',')         # <list> of comma separated <str>
+            ts = currentTime_ms - startTime_ms   # timestamp for CAN message
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[5], 'utf-8'), 16)     # ditto for data length code (dlc)
             data = bytearray(8)             # build data as <bytearray> of size 8
@@ -209,6 +210,4 @@ if __name__ == "__main__":
 
             cdc.cdm_decode(msg)             # decode the message as per LEAF info
 
-
-    
     print("finished decoding CAN-log input ")
