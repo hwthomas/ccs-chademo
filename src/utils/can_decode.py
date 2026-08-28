@@ -15,6 +15,7 @@
 
 import can      # for message structure, construction and transmission 
 import time     # for sleep and timings
+import os
 import sys
 
 from configmodule import getConfigValue, getConfigValueBool
@@ -164,10 +165,10 @@ if __name__ == "__main__":
     # use a can.Message object for decoding and subsequent sending
     # see https://python-can.readthedocs.io/en/stable/message.html
     
-    with can.Bus() as bus:
+    with bus:
         print('Ready')
         while True:
-            msg = can.recv(0)   # non-blocking wait for canbus message
+            msg = bus.recv(0)   # non-blocking wait for canbus message
 
             if msg:
                 print(msg)
