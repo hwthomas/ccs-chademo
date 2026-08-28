@@ -159,21 +159,15 @@ if __name__ == "__main__":
         exit()
 
     print("Testing can_decode using CAN-bus input...")
+
     # create a can_decode instance, using cbAddToTrace and cbShowStatus functions above
     cdc = can_decode(cdcAddToTrace, cdcShowStatus)
 
-    # use a can.Message object for decoding and subsequent sending
-    # see https://python-can.readthedocs.io/en/stable/message.html
-    
-    with bus:
+    with bus:           # this is the hardware channel 'can0' created above
         print('Ready')
         while True:
             msg = bus.recv(0)   # non-blocking wait for canbus message
-
             if msg:
-                print(msg)
-                # In operation, the canbus message is received from the hardware interface
-        
                 # decode the message using cdc.can_decode function
                 cdc.chademo(msg)
 
