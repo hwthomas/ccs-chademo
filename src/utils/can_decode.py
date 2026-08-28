@@ -145,6 +145,18 @@ def cdcShowStatus(s, selection=""):
     pass
 
 if __name__ == "__main__":
+
+    print('Bring up CAN0....')
+    os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
+    os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
+    time.sleep(0.1) 
+    
+    try:
+        bus = can.Bus(channel='can0', interface='socketcan', can_filters=None)    # allow all CAN-IDs
+    except OSError:
+        print('Cannot find CAN board.')
+        exit()
+
     print("Testing can_decode using CAN-bus input...")
     # create a can_decode instance, using cbAddToTrace and cbShowStatus functions above
     cdc = can_decode(cdcAddToTrace, cdcShowStatus)
@@ -153,6 +165,7 @@ if __name__ == "__main__":
     # see https://python-can.readthedocs.io/en/stable/message.html
     
     with can.Bus() as bus:
+        print('Ready')
         while True:
             msg = can.recv(0)   # non-blocking wait for canbus message
 
