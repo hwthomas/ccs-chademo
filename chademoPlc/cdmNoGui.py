@@ -26,12 +26,13 @@ if (len(sys.argv) > 1):
 print("starting in PEV_MODE")
 print("press Ctrl-C to exit")
 
+# set worker function,linking to cbAddToTrace and cbShowStatus functions defined above
 worker=pyPlcWorker.pyPlcWorker(cbAddToTrace, cbShowStatus, myMode, isSimulationMode)
 
 nMainloops=0
-while (1):
-    # time.sleep(.03) #  main scan period is now set in pyPlcWorker main function
-    nMainloops+=1
+while True:
+    # time.sleep(.03)       # scan period is now set in pyPlcWorker main function
+    nMainloops+=1           # track number of calls of worker.mainfunction
     worker.mainfunction()
 
 #---------------------------------------------------------------

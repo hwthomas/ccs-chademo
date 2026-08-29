@@ -24,7 +24,7 @@ def rx_handler(reply: bytes):
         multi_msg = bytearray([])   # and clear multi-message buffer
         if( len(group) == 138):     # check for valid group length
             analyse_group(group)    # and analyse if OK so far
-    rx_available.set()              # mark rx buffer available (always)
+    rx_available.set()              # rx buffer now available again
 
 async def send_cmd(ble: BLE_client, cmd):  # send command with handshake
     await asyncio.sleep(0.05)       # minimum time between commands
