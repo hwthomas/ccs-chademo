@@ -11,7 +11,9 @@ from configmodule import getConfigValue, getConfigValueBool
 stateNotYetInitialized = 0
 stateStartingCANbus = 1
 stateCANreceived = 2
-stateCANdecoding = 3
+state EVlimits = 3
+stateChargerlimits = 4
+stateEVready = 5
 stateCANerror = 10
 stateShutDown = 20
 stateEnd = 50
@@ -28,15 +30,19 @@ class fsmCHdeMO():
         if (statenumber == stateNotYetInitialized):
             s = "NotYetInitialized"
         if (statenumber == stateStartingCANbus):
-            s = "Sarting CAN bus"
+            s = "Starting CAN bus"
         if (statenumber == stateCANreceived):
             s = "CAN messages received"
-        if (statenumber == stateCANdecoding ):
-            s = "CANdecoding "
+        if (statenumber == stateEVlimits):
+            s =  "Getting EV limits
+        if (statenumber == stateCharger limits):
+            s = "SendingChargerlimits"
+        if (statenumber == stateEVready):
+            s = "EV ready to charge"
         if (statenumber == stateCANerror):
             s = "CAN Error"
         if (statenumber == stateShuttingDown):
-            s = "ShutDown"
+            s = "Sequence ShutDown"
         if (statenumber == stateEnd):
             s = "End"
         return s
