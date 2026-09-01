@@ -7,15 +7,15 @@ CAN Id 0x100        4 vars
 name                            bitPos  bits    byteOrder   byte    factor  range       units
 minimumChargeCurrent            0       8       Intel       [0]     1       0|255       amps
 unused                          8       8       Intel       [1]     1       0|255       -
-minimumBatteryVoltage           16      16      Intel       [2,3]   0.01    0|600.00    volts
-maximumBatteryVoltage           32      16      Intel       [4,5]   0.01    0|600.00    volts
+minimumBatteryVoltage           16      16      Intel       [2,3]   1       0|600.00    volts
+maximumBatteryVoltage           32      16      Intel       [4,5]   1       0|600.00    volts
 chargingRateIndication          48      8       Intel       [6]     1       0|100       %
 
 code
 ~~~~
 minimumChargeCurrent = data[0]
-minimumBatteryVoltage = (data[3]<<8 + data[2])*0.01
-maximumBatteryVoltage = (data[5]<<8 + data[4])*0.01
+minimumBatteryVoltage = data[2] + data[3]<<8
+maximumBatteryVoltage = data[4] + data[5]<<8
 chargingRateIndication = data[6]
 
 
@@ -32,14 +32,14 @@ code
 maxChargingTime10sBit = data[1]*10
 maxChargingTimeMins = data[2]
 estimatedChargingTimeMins = data[3]
-ratedBatteryCapacity = (data[6]<<8 + data[5])*0.11
+ratedBatteryCapacity = (data[5] + data[6]<<8)*0.11
 
 
 CAN Id 0x102    14 vars
 ~~~~~~~~~~~~
 name                            bitPos  bits    byteOrder   byte    factor  range       units
 controlProtocolNumberEV         0       8       Intel       [0]     1       0|255       -
-targetBatteryVoltage            8      16       Intel       [1,2]   0.01    0|600       volts
+targetBatteryVoltage            8      16       Intel       [1,2]   1       0|600       volts
 chargeCurrentRequest            24      8       Intel       [3]     1       0|255       amps
 
 faultBits for vehicle           32      8       Intel       [4]     1       0|255       0/1
@@ -62,7 +62,7 @@ evStateOfChargeSOC              48      8       Intel       [6]     1       0|10
 code
 ~~~~
 controlProtocolNumberEV=data[0]
-targetBatteryVoltage=data[1]<<8 + data[2]
+targetBatteryVoltage=data[1] + data[2]<<8
 chargeCurrentRequest=data[3]
 evStateOfCharge=data[6]
 
@@ -85,9 +85,9 @@ CAN Id 0x108    4 vars  {eVContactorWeldingDetection, availableOutputVoltage,   
 ~~~~~~~~~~~~            {availableOutputCurrent, thresholdVoltage               }
 name                            bitPos  bits    byteOrder   byte    factor  range   units
 eVContactorWeldingDetection     0       8       Intel       [0]     1       0|255   amps
-availableOutputVoltage          8       16      Intel       [1,2]   0.01    0|600   volts
+availableOutputVoltage          8       16      Intel       [1,2]   1       0|600   volts
 availableOutputCurrent          24      8       Intel       [3]     1       0|255   amps
-thresholdVoltage                32      16      Intel       [4,5]   0.01    0|600   volts
+thresholdVoltage                32      16      Intel       [4,5]   1       0|600   volts
 
 code
 ~~~~
@@ -97,7 +97,7 @@ CAN Id 0x109    11 variables    {controlProtocolNumberQC, outputVoltage, outputC
 ~~~~~~~~~~~~                    {statusByte, chargingTimeSec, chargingTimeMin           }
 name                            bitPos  bits    byteOrder   byte    factor  range   units
 controlProtocolNumberQC         0       8       Intel       [0]     1       0|255
-outputVoltage                   8       16      Intel       [1,2]   0.01    0|600   volts
+outputVoltage                   8       16      Intel       [1,2]   1       0|600   volts
 outputCurrent                   2       8       Intel       [3]     1       0|255   amps
 
 statusByte (for charger)        40      8       Intel       [5]     1       0|255
