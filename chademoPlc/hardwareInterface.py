@@ -333,26 +333,26 @@ class hardwareInterface():
 
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
-                                
-        self.evChargePermit = getEVchargePermit()   # read signal_k
+
+        getEVchargePermit()     # read signal_k
 
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = 0           # CAN-ID 0x100
         self.minBatteryVoltage = 0
         self.maxBatteryVoltage = 0
         self.chargeRateIndication = 100
-    
+
         self.maxChargeTimeMins = 0          # CAN-ID 0x101
         self.estChargeTimeMins = 0
         self.ratedCapacitykWh = 0
-        
+
         self.targetBatteryVolts = 0         # CAN-ID 0x102
         self.chargeCurrentRequest = 0
         self.evFaultBits = 0
         self.evStatusBits = 0
         self.evStateOfCharge = 0
         # end of CHAdeMO current variables
-        
+
         self.simulatedSoc = 20.0    # percent
         self.demoAuthenticationCounter = 0
         self.enabled = True         # Charging enabled
@@ -375,7 +375,7 @@ class hardwareInterface():
         self.maxChargerCurrent = 10
         self.chargerVoltage = 0
         self.chargerCurrent = 0
-        
+
         self.infonumber = 0     # these are new, and only for Charger project?
         self.focccicapeCycleCounter = 0
         self.evseModePowerSupplyTargetVoltage = 0
@@ -505,7 +505,7 @@ class hardwareInterface():
                 sys.exit(0)
 
     def mainfunction_chademo(self):
-        getEVchargePermit(self)         # poll EVchargePermit input (signal k)
+        getEVchargePermit()             # poll EVchargePermit input (signal k)
         message = self.canbus.recv(0)   # non-blocking check for (any) CAN-bus message
         #
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
@@ -519,12 +519,12 @@ class hardwareInterface():
                 if self.minChargeCurrent != new_value:
                     self.addToTrace("CHAdeMO: minChargeCurrent = %d Amps" % new_value)
                     self.minChargeCurrent = new_value
- 
+
                 new_value =  int(message.data[2]) + int(message.data[3])*256
                 if(self.minBatteryVolts != new_value):
                     self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
                     self.minBatteryVolts = new_value
-                    
+
                 new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.maxBatteryVolts != new_value):
                     self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
