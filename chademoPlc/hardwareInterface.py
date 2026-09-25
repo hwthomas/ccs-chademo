@@ -19,10 +19,10 @@ if (getConfigValue("digital_output_device") == "rpi_gpio"):
     pinSS1 = 29     # d1/SS1 Charge sequence signal 1
     pinSS2 = 13     # d2/SS2 Charge sequence signal 2
     pinWdg = 33     # pinWdg WatchDog charge pump (future)
-    
+
     # GPIO input definitions
     pin_k = 10      # used for evChargePermit (signal k)
-    
+
     GPIO.setmode(GPIO.BOARD)                    # set GPIO for board (physical pin) numbering
     outputs = [pinCp, pinSS1, pinSS2, pinWdg]
     for pin in outputs:                         # process all the outputs defined above
@@ -260,7 +260,7 @@ class hardwareInterface():
        #todo: get SOC from the BMS using ELM327 dongle
         self.callbackShowStatus(format(self.simulatedSoc,".1f"), "soc")
         return self.simulatedSoc
-        
+
     def getEVchargePermit(self):
         self.evChargePermit = not GPIO.input(pin_k)     # pin_k is active(LOW)
         return self.evChargePermit
@@ -334,7 +334,7 @@ class hardwareInterface():
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
 
-        getEVchargePermit()     # read signal_k
+        self.evChargePermit = 0.0           # input of signal_k via GPIO
 
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = 0           # CAN-ID 0x100
@@ -464,9 +464,8 @@ class hardwareInterface():
     def close(self):
         if (self.isSerialInterfaceOk):
             self.ser.close()
-    def close(self):
-        if (self.isSerialInterfaceOk):
-            self.ser.close()
+        if(getConfigValue("digital_output_device") == "rpi_gpio"):
+            GPIO.cleanup()
 
     def showOnDisplay(self, s1, s2, s3):
         pass
@@ -535,24 +534,24 @@ class hardwareInterface():
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
-                    
+
             if message.arbitration_id == 0x102:
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVolts != new_value):
                     self.addToTrace("CHAdeMO: targetBatteryVolts = %d V" % new_value)
                     self.targetBatteryVolts = new_value
-                    
+
                 new_value = message.data[3]
                 if(self.chargeCurrentRequest != new_value):
                     self.addToTrace("CHAdeMO: chargeCurrentRequest = %d A" % new_value)
                     self.chargeCurrentRequest = new_value
                     self.lastReceptionTime = time()
-                    
+
                 new_value = message.data[4]
                 if(self.evFaultBits != new_value):
                     self.addToTrace("CHAdeMO: evFaultBits = %X" % new_value)
                     self.evFaultBits = new_value
-                    
+
                 new_value = message.data[5]
                 if(self.evStatusBits != new_value):
                     self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
@@ -607,11 +606,13 @@ if __name__ == "__main__":
             pass
         if (i==500):
             pass
-        if (i==750):            # set EV current demand to zero
+        if (i==700):            # set EV current demand to zero
             hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0)
+        if (i==800):            # set EV current demand to zero
+            hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
         if (i==900):
-            hw.setSS22_Off()    # EVSE disables d2/SS2 charge signal and EV contactors
+            hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
         sleep(0.03)             # wait for approx. scan time
-        
+
     hw.close()
     print("hardwareInterface test finished.")
