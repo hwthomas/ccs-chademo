@@ -613,8 +613,9 @@ if __name__ == "__main__":
             if (i==900):
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
             sleep(0.03)             # wait for approx. scan time
-    except:
-        KeyboardInterrupt:          # ctrl-C quits if all else fails!
+
+    except KeyboardInterrupt:       # ctrl-C quits if all else fails!
             pass
+    print("\nShutting down hardwareInterface safely...")
     hw.close()                      # close hardwareInterface cleanly (TODO: needs more work to be safe)
     print("hardwareInterface test finished.")
