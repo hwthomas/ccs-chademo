@@ -1,21 +1,24 @@
 #
-# file fsmCHdeMo.py:   State machine for the car CHAdeMO polling loop
+# file fsmCHdeMo.py:   State machine for the car CHAdeMO sequence
 #
-#-----------------------------------------------------------------
 
-import time # for time.sleep()
+import time     # for time.sleep()
 from helpers import prettyHexMessage, compactHexMessage, combineValueAndMultiplier
 
 from configmodule import getConfigValue, getConfigValueBool
 
 stateNotYetInitialized = 0
-stateStartingCANbus = 1
-stateCANreceived = 2
-state EVlimits = 3
-stateChargerlimits = 4
-stateEVready = 5
+stateAssertSS1 = 1
+stateAwaitingCANmessage = 2
+stateExchangingChargingLimits = 3
+stateCheckCompatibility = 4
+stateCableCheckRequest = 5
+statePrechargeRequest = 6
+stateEVready = 7
+statePowerDelivery = 8
+stateChargeFinished = 9
 stateCANerror = 10
-stateShutDown = 20
+stateShuttingDown = 20
 stateEnd = 50
 
 class fsmCHdeMO():
@@ -29,16 +32,24 @@ class fsmCHdeMO():
         s="unknownState"
         if (statenumber == stateNotYetInitialized):
             s = "NotYetInitialized"
-        if (statenumber == stateStartingCANbus):
-            s = "Starting CAN bus"
-        if (statenumber == stateCANreceived):
-            s = "CAN messages received"
-        if (statenumber == stateEVlimits):
-            s =  "Getting EV limits
-        if (statenumber == stateCharger limits):
-            s = "SendingChargerlimits"
+        if (statenumber == stateAssertSS1):
+            s = "Asserting d1/SS1 to EV"
+        if (statenumber == stateAwaitingCANmessage):
+            s = "Waiting for CAN messages"
+        if (statenumber == stateExchangingChargingLimits):
+            s = "Exchanging Charging Limits
+        if (statenumber == stateCheckCompatibility):
+            s = "Checking EV and Charger compatibility"
+        if (statenumber == stateCableCheckRequest):
+            s = "Waiting for CableCheck Response"
+        if (statenumber == statePrechargeRequest):
+            s = "Waiting for Precharge Response"
         if (statenumber == stateEVready):
             s = "EV ready to charge"
+        if (statenumber == statePowerDelivery):
+            s = "Power Delivery Loop"
+        if (statenumber = stateChargeFinished):
+            s = "Charging Finished"
         if (statenumber == stateCANerror):
             s = "CAN Error"
         if (statenumber == stateShuttingDown):
@@ -48,44 +59,38 @@ class fsmCHdeMO():
         return s
 
     def enterState(self, n):
-        self.addToTrace("from " + str(self.state) + ":" + self.prettifyState(self.state) + " entering " + str(n) + ":" + self.prettifyState(n))
-        self.state = n
-        self.cyclesInState = 0
+        # Check for fsm single-step enabled, and if so wait for confirmation
+        if (self.fsm_single_step):
+            self.addToTrace("from " + str(self.stateCurrent) + ":" + self.prettifyState(self.stateCurrent) + " entering " + str(n) + ":" + self.prettifyState(n))
+            self.stateCurrent = n
+            self.cyclesInState = 0
+        else:
+            pass    # enter another scan with the current state unchanged
 
     def stateFunctionNotYetInitialized(self):
-        pass # nothing to do, just wait for external event for re-initialization
+        pass # nothing to do, just wait for external user input to start sequence
 
-    def stateFunctionStartCANbus(self):
+    def stateFunctionAssertSS1(self):
         if (self.cyclesInState<30): # The first second in the state just do nothing.
             return
-        evseIp = self.addressManager.getSeccIp() # the chargers IP address which was announced in SDP
-        seccTcpPort = self.addressManager.getSeccTcpPort() # the chargers TCP port which was announced in SDP
-        self.addToTrace("Checkpoint301: connecting")
-        self.Tcp.connect(evseIp, seccTcpPort) # This is a blocking call. If we come back, we are connected, or not.
-        if (not self.Tcp.isConnected):
-            # Bad case: Connection did not work. May happen if we are too fast and the charger needs more
-            # time until the socket is ready. Or the charger is defective. Or somebody pulled the plug.
-            # No matter what is the reason, we just try again and again. What else would make sense?
-            self.addToTrace("Connection failed. Will try again.")
-            self.reInit() # stay in same state, reset the cyclesInState and try again
-            return
         else:
-            # Good case: We are connected. Change to the next state.
-            self.addToTrace("connected")
-            self.publishStatus("TCP connected")
+            self.addToTrace("Assert d1/SS1 to start CAN bus in EV")
             self.isUserStopRequest = False
-            self.enterState(stateConnected)
+            self.enterState(stateAwaitCANmessage)
             return
 
-    def stateFunctionCANreceived(self):
-        # CAN driver has a CAN message ready
+    def stateFunctionAwaitingCANmessage(self):
+        # waiting for CAN driver to have a CAN message ready
 
-    def stateFunctionCANdecoding(self):
+    def stateFunctionExchangingChargingLimits(self):
         # We have received one (or more) CAN messages.  
         # Decode the message and evaluate the data values.
         # stay in this loop until the user decides to move on
         #self.hardwareInterface.resetSimulation()
         #self.enterState(stateWaitForSupportedApplicationProtocolResponse)
+        
+    def stateFunctionCheckCompatibility(self):
+        # check charger and EV limits for compatibility
 
     def stateFunctionCANerror(self):
         # Here we end, if the CAN reports any errors.
@@ -95,7 +100,6 @@ class fsmCHdeMO():
         self.hardwareInterface.setStateB() # setting CP line to B disables the charger the current flow.
         self.DelayCycles = 66 # 66*30ms=2s for charger shutdown
         self.enterState(stateShutDown)
-
 
     def stateFunctionShuttingDown(self):
         # wait state, to allow car to stop CAN messages and set CCS StateC -> StateB
@@ -111,11 +115,17 @@ class fsmCHdeMO():
 
     stateFunctions = {
             stateNotYetInitialized: stateFunctionNotYetInitialized,
-            stateStartCANbus: stateFunctionStartingCANbus,
-            stateCANreceived: stateFunctionCANreceived,
-            stateCANdecoding: stateFunctionCANdecoding,
-            stateCANError: stateFunctionCANerror,
-            stateShutDown: stateFunctionShutDown,
+            stateAssertSS1: stateFunctionAssertSS1,
+            stateAwaitCANmessage: stateFunctionCANreceived,
+            stateExchangeChargingLimits: stateFunctionExchangeChargingLimits,
+            stateCheckCompatibility: stateFunctionCheckCompatibility,
+            stateCableCheckRequest: stateFunctionCableCheckRequest,
+            statePrechargeRequest: stateFunctionPrechargeRequest,
+            stateEVready: stateFunctionEVready,
+            statePowerDelivery: stateFunctionPowerDelivery,
+            stateChargeFinished: stateFunctionChargeFinished,
+            stateCANerror: stateFunctionCANerror,
+            stateShuttingDown: stateFunctionShuttingDown,
             stateEnd: stateFunctionEnd
         }
 
@@ -123,63 +133,50 @@ class fsmCHdeMO():
         # API function to stop the charging.
         self.isUserStopRequest = True
 
-
     def reInit(self):
-        self.addToTrace("re-initializing fsmPev")
-        self.Tcp.disconnect()
+        self.addToTrace("re-initializing fsmCHdeMO")
         self.hardwareInterface.setStateB()
         self.hardwareInterface.setPowerRelayOff()
         self.hardwareInterface.setRelay2Off()
         self.isBulbOn = False
         self.cyclesLightBulbDelay = 0
-        self.state = stateConnecting
+        self.stateCurrent = stateNotYetInitialized
         self.cyclesInState = 0
-        self.rxData = []
 
-    def __init__(self, addressManager, connMgr, callbackAddToTrace, hardwareInterface, callbackShowStatus):
+    def __init__(self, callbackAddToTrace, hardwareInterface, callbackShowStatus):
         self.callbackAddToTrace = callbackAddToTrace
         self.callbackShowStatus = callbackShowStatus
-        self.addToTrace("initializing fsmPev")
-        self.exiLogFile = open('PevExiLog.txt', 'a')
-        self.exiLogFile.write("init\n")
-        # self.Tcp = pyPlcTcpSocket.pyPlcTcpClientSocket(self.callbackAddToTrace)
-        # self.addressManager = addressManager
-        # self.connMgr = connMgr
+        self.addToTrace("initializing fsmCHdeMO")
+        self.exiLogFile = open('CdmExiLog.log', 'a')
+        self.exiLogFile.write("Initialising CHAdeMO state machine log\n")
         self.hardwareInterface = hardwareInterface
-        self.state = stateNotYetInitialized             # start the stateMachine here
-        self.sessionId = "DEAD55AADEAD55AA"
-        self.evccid = addressManager.getLocalMacAsTwelfCharString()
+        self.stateCurrent = stateNotYetInitialized     # start the stateMachine at this state
+        self.fsm_single_step = getConfigValueBool("fsm_single_step")
         self.cyclesInState = 0
         self.DelayCycles = 0
-        self.rxData = []
         self.isLightBulbDemo = getConfigValueBool("light_bulb_demo")
         self.isBulbOn = False
         self.cyclesLightBulbDelay = 0
         self.isUserStopRequest = False
-        # we do NOT call the reInit, because we want to wait with the connection until external trigger comes
+        # we do NOT call reInit, because we want to wait with the connection until external trigger comes
 
     def __del__(self):
         self.exiLogFile.write("closing\n")
         self.exiLogFile.close()
 
     def mainfunction(self):
-        #self.Tcp.mainfunction() # call the lower-level worker
-        #if (self.Tcp.isRxDataAvailable()):
-        #        self.rxData = self.Tcp.getRxData()
-        #        #self.addToTrace("received " + prettyHexMessage(self.rxData))
-        
-        # run the state machine:
-        self.cyclesInState += 1 # for timeout handling, count how long we are in a state
-        self.stateFunctions[self.state](self)   # start in stateNotYetInitialised
+        # run the state machine: each program scan take 30mS (ish), set by pyPlcWorker loop
+        self.cyclesInState += 1     # for first-call and timeout handling, count how long we are in a state
+        self.stateFunctions[self.stateCurrent](self)   # call current stateFunction
 
 pass    # end of class fsmCHdeMO
 
 if __name__ == "__main__":
-    print("Testing the CHdeMO state machine")
-    cdm = fsmCHdeMO()
-    print("Press Ctrl-Break for aborting")
+    print("Testing the CHAdeMO state machine")
+    cdm = fsmCdM()       # create CHAdeMO state machine, and initialise to stateNotYetInitialised
+    print("Press Ctrl-C to end loop")
     while (True):
-        time.sleep(0.1)
+        time.sleep(0.03)    # 30mS sets scan period for the State Machine test loop
         cdm.mainfunction()
 
 

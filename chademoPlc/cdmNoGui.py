@@ -31,7 +31,7 @@ worker=pyPlcWorker.pyPlcWorker(cbAddToTrace, cbShowStatus, myMode, isSimulationM
 
 nMainloops=0
 while True:
-    # time.sleep(.03)       # scan period is now set in pyPlcWorker main function
+    # time.sleep(.03)       # scan period is now set in worker.mainfunction
     nMainloops+=1           # track number of calls of worker.mainfunction
     worker.mainfunction()
 
