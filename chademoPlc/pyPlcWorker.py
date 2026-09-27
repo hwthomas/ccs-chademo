@@ -9,7 +9,7 @@ from pyPlcModes import *
 import time
 import subprocess
 import hardwareInterface
-from nonblockstdin import raw, nonblocking
+
 
 
 class pyPlcWorker():
@@ -24,25 +24,15 @@ class pyPlcWorker():
         self.oldAvlnStatus = 0
         self.isSimulationMode = isSimulationMode
         
-        # Find out the version number, using git. Question: is this really necessary?
-        # see https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
-        try:
-            strLabel = str(subprocess.check_output(["git", "describe", "--tags"], text=True).strip())
-        except:
-            strLabel = "(unknown version. 'git describe --tags' failed.)"
-        self.workerAddToTrace("[pyPlcWorker] Software version " + strLabel)
-
         # set up the tasks which are to be called on every PLC scan
         self.hardwareInterface = hardwareInterface.hardwareInterface(self.workerAddToTrace, self.showStatus, None)
         self.cdm = fsmCdM.fsmCdM(None, None, self.workerAddToTrace, self.hardwareInterface, self.showStatus)
 
-    
-    def __del__(self):              # not needed now?
-        if (self.mode == C_PEV_MODE):
-            try:
-                del(self.pev)
-            except:
-                pass
+    def __del__(self):
+        try:
+            del(self.cdm)
+        except:
+            pass
 
     def workerAddToTrace(self, s):
         # The central logging function. 
@@ -55,15 +45,11 @@ class pyPlcWorker():
 
     def mainfunction(self):
         self.nMainFunctionCalls+=1              # increment PLC scan number
-
+        # Timing on a Raspberry_Pi (4b) indicates 0.5mS to 1.5mS for this worker main loop
         self.hardwareInterface.setWdog_On()     # Set Watchdog output HIGH at start of main loop
         self.hardwareInterface.mainfunction()   # call hardwareInterface to read CAN inputs, etc
         self.cdm.mainfunction()                 # call the CHAdeMO state machine
         self.hardwareInterface.setWdog_Off()    # Set Watchdog output LOW at end of main loop
-
-        # Timing on a Raspberry_Pi (4b) indicates 0.5mS to 1.5mS for this main loop
-        sleep(0.03)                             # Sleep for 30mS to set PLC average scan-time.
-
 
     def handleUserAction(self, strAction):      # UserAction determined by non-blocking stdin cmd
         self.strUserAction = strAction
@@ -72,4 +58,7 @@ class pyPlcWorker():
             print("stopping the charge process")
             if (hasattr(self, 'pev')):
                 self.cdm.stopCharging()
+                
+pass    # end of class pyPlcWorker
+                
 

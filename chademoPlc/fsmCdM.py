@@ -3,15 +3,15 @@
 #
 
 import time     # for time.sleep()
-from helpers import prettyHexMessage, compactHexMessage, combineValueAndMultiplier
 
+from helpers import prettyHexMessage, compactHexMessage, combineValueAndMultiplier
 from configmodule import getConfigValue, getConfigValueBool
 
 stateNotYetInitialized = 0
 stateAssertSS1 = 1
 stateAwaitingCANmessage = 2
 stateExchangingChargingLimits = 3
-stateCheckCompatibility = 4
+stateCheckingCompatibility = 4
 stateCableCheckRequest = 5
 statePrechargeRequest = 6
 stateEVready = 7
@@ -38,7 +38,7 @@ class fsmCHdeMO():
             s = "Waiting for CAN messages"
         if (statenumber == stateExchangingChargingLimits):
             s = "Exchanging Charging Limits
-        if (statenumber == stateCheckCompatibility):
+        if (statenumber == stateCheckingCompatibility):
             s = "Checking EV and Charger compatibility"
         if (statenumber == stateCableCheckRequest):
             s = "Waiting for CableCheck Response"
@@ -76,7 +76,7 @@ class fsmCHdeMO():
         else:
             self.addToTrace("Assert d1/SS1 to start CAN bus in EV")
             self.isUserStopRequest = False
-            self.enterState(stateAwaitCANmessage)
+            self.enterState(stateAwaitingCANmessage)
             return
 
     def stateFunctionAwaitingCANmessage(self):
@@ -89,7 +89,7 @@ class fsmCHdeMO():
         #self.hardwareInterface.resetSimulation()
         #self.enterState(stateWaitForSupportedApplicationProtocolResponse)
         
-    def stateFunctionCheckCompatibility(self):
+    def stateFunctionCheckingCompatibility(self):
         # check charger and EV limits for compatibility
 
     def stateFunctionCANerror(self):
@@ -116,9 +116,9 @@ class fsmCHdeMO():
     stateFunctions = {
             stateNotYetInitialized: stateFunctionNotYetInitialized,
             stateAssertSS1: stateFunctionAssertSS1,
-            stateAwaitCANmessage: stateFunctionCANreceived,
-            stateExchangeChargingLimits: stateFunctionExchangeChargingLimits,
-            stateCheckCompatibility: stateFunctionCheckCompatibility,
+            stateAwaitingCANmessage: stateFunctionAwaitingCANmessage,
+            stateExchangingChargingLimits: stateFunctionExchangingChargingLimits,
+            stateCheckingCompatibility: stateFunctionCheckingCompatibility,
             stateCableCheckRequest: stateFunctionCableCheckRequest,
             statePrechargeRequest: stateFunctionPrechargeRequest,
             stateEVready: stateFunctionEVready,
