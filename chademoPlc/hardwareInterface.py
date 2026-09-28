@@ -20,12 +20,18 @@ if (getConfigValue("digital_output_device") == "rpi_gpio"):
     pinSS1 = 29     # d1/SS1 Charge sequence signal 1
     pinSS2 = 13     # d2/SS2 Charge sequence signal 2
     pinWdg = 33     # pinWdg WatchDog charge pump (future)
-
+    
+    # GPIO input definitions
+    pin_k = 10      # used for evChargePermit (signal k)
+    
     GPIO.setmode(GPIO.BOARD)                    # set GPIO for board (physical pin) numbering
-    pins = [pinCp, pinSS1, pinSS2, pinWdg]
-    for pin in pins:                            # process all the outputs defined above
+    outputs = [pinCp, pinSS1, pinSS2, pinWdg]
+    for pin in outputs:                         # process all the outputs defined above
         GPIO.setup(pin, GPIO.OUT)               # set up each of the GPIO pins as outputs
         GPIO.output(pin, GPIO.LOW)              # also set each output LOW at start
+    inputs = [pin_k]
+    for pin in inputs:
+        GPIO.setup(pin, GPIO.IN)
 
 if (getConfigValue("charge_parameter_backend")=="chademo"):
     # As we use the CHAdeMO backend, we need to use CAN - (pip3 install python-can)  
@@ -257,6 +263,10 @@ class hardwareInterface():
        #todo: get SOC from the BMS using ELM327 dongle
         self.callbackShowStatus(format(self.simulatedSoc,".1f"), "soc")
         return self.simulatedSoc
+        
+    def getEVchargePermit(self)
+        self.evChargePermit = GPIO.input(pin_k)
+        return self.evChargePermit
 
     def stopRequest(self):
         return not self.enabled
@@ -326,6 +336,8 @@ class hardwareInterface():
 
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
+                                
+        self.evChargePermit = GPIO.input(pin_k)      # read signal_k (LOW active)
 
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = 0           # CAN-ID 0x100
@@ -496,7 +508,8 @@ class hardwareInterface():
                 sys.exit(0)
 
     def mainfunction_chademo(self):
-        message = self.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
+        getEVchargePermit(self)         # poll EVchargePermit input (signal k)
+        message = self.canbus.recv(0)   # non-blocking check for (any) CAN-bus message
         #
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
@@ -557,7 +570,7 @@ class hardwareInterface():
             self.canbus.send(msg)
 
             status = 4 if self.maxChargerVoltage > 0 else 0  #report connector locked
-            msg = can.Message(arbitration_id=0x109, data=[ 10, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+            msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
         ############################################## HWT edit  ########################
