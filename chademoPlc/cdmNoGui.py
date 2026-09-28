@@ -37,7 +37,7 @@ lastKey = ''
 try:
     with raw(sys.stdin):        
         with nonblocking(sys.stdin):    # using non-blocking keyboard input...
-
+            print("Single-key immediate commands: 'q' (quit), 'y' (yes to confirm next state)")
             while lastKey != 'q':               # worker.mainfunction loop until...
                 lastKey = sys.stdin.read(1)     # non-blocking check of input
                 if lastKey:
@@ -58,4 +58,4 @@ except KeyboardInterrupt:           # ctrl-C quits immediately
     del(worker)                     # remove worker function
     print( "Program terminated")
 
-#---------------------------------------------------------------
+#-------------------------------------------------------------------------------

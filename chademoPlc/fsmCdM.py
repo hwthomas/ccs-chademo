@@ -1,5 +1,5 @@
 #
-# file fsmCHdeMo.py:   State machine for the car CHAdeMO sequence
+# file fsmCdM.py:   State machine for the car CHAdeMO sequence
 #
 
 import time     # for time.sleep()
@@ -59,6 +59,7 @@ class fsmCHdeMO():
         return s
 
     def enterState(self, n):
+        self.stateNext = n      # set up next state to be entered
         # Check for fsm single-step enabled, and if so wait for confirmation
         if (self.fsm_single_step):
             self.addToTrace("from " + str(self.stateCurrent) + ":" + self.prettifyState(self.stateCurrent) + " entering " + str(n) + ":" + self.prettifyState(n))
@@ -68,7 +69,11 @@ class fsmCHdeMO():
             pass    # enter another scan with the current state unchanged
 
     def stateFunctionNotYetInitialized(self):
-        pass # nothing to do, just wait for external user input to start sequence
+        if(self.cyclesInState = 1):         # print only on first call
+            self.addToTrace("Waiting for 'n' command to move to next state, or 'q' to quit")
+        if (self.cyclesInState<30):         # The first second in the state just do nothing.
+            return
+        self.enterState(stateAssertSS1)     # then move on to start CAN messages from EV
 
     def stateFunctionAssertSS1(self):
         if (self.cyclesInState<30): # The first second in the state just do nothing.
@@ -150,7 +155,8 @@ class fsmCHdeMO():
         self.exiLogFile = open('CdmExiLog.log', 'a')
         self.exiLogFile.write("Initialising CHAdeMO state machine log\n")
         self.hardwareInterface = hardwareInterface
-        self.stateCurrent = stateNotYetInitialized     # start the stateMachine at this state
+        self.stateCurrent = stateNotYetInitialized  # current state 
+        self.stateNext = None                       # next state to be entered
         self.fsm_single_step = getConfigValueBool("fsm_single_step")
         self.cyclesInState = 0
         self.DelayCycles = 0
