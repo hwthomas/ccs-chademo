@@ -603,15 +603,15 @@ if __name__ == "__main__":
             hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
                                 # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
         if (i==100):            # EV requests voltage and current via CAN message 0x102
-            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest):
+            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
         if (i==200):
             pass
         if (i==500):
             pass
         if (i==750):            # set EV current demand to zero
-            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0):
+            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0)
         if (i==900):
-            hw.setSS22_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
+            hw.setSS22_Off()    # EVSE disables d2/SS2 charge signal and EV contactors
         sleep(0.03)             # wait for approx. scan time
         
     hw.close()
