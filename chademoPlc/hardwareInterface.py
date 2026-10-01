@@ -10,7 +10,6 @@ import sys # For exit_on_session_end hack
 import os  # For os.system calls
 from random import random
 from cableChecker import *
-from environment_info import getLogFileNumber
 
 if (getConfigValue("digital_output_device") == "rpi_gpio"):
     import RPi.GPIO as GPIO   # Raspberry Pi GPIO library
