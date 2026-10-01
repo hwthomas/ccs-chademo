@@ -262,7 +262,7 @@ class hardwareInterface():
         self.callbackShowStatus(format(self.simulatedSoc,".1f"), "soc")
         return self.simulatedSoc
         
-    def getEVchargePermit(self)
+    def getEVchargePermit(self):
         self.evChargePermit = not GPIO.input(pin_k)     # pin_k is active(LOW)
         return self.evChargePermit
 
