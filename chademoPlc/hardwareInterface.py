@@ -75,7 +75,7 @@ class hardwareInterface():
             GPIO.output(pinCp, GPIO.HIGH)
         self.outvalue |= 1
 #
-##################################################
+#----------------------------------------------------------------
 #
 # Following digital outputs are dummies
 # at present, these are the only ones referenced in fsmPev.py, and
@@ -102,11 +102,10 @@ class hardwareInterface():
         self.addToTrace("Switching Relay2 OFF.")
         self.outvalue &= ~0x20
 
-##################################################
-
+#-----------------------------------------------------------------
 #
-# These are the CHAdeMO sequence signals, which need to be activated
-# in the fsmCdM code at appropriate points (to be determined)
+# These are the CHAdeMO sequence signals, which need to
+#  be activated in the fsmCdM code at appropriate points
 #
     def setSS1_On(self):
         self.addToTrace("Switching Charge Signal SS1 ON.")
@@ -226,18 +225,17 @@ class hardwareInterface():
     def getAccuVoltage(self):
         if (getConfigValue("charge_parameter_backend") == "chademo"):
             return self.accuVoltage
-        #todo: get real measured voltage from the accu
+        #todo: get real measured voltage from the accu. (via OBDII dongle?)
         self.accuVoltage = 230
         return self.accuVoltage
 
     def getAccuMaxCurrent(self):
-        if (getConfigValue("digital_output_device")=="rpi_gpio"):
-            # The overall current limit is currently hardcoded in
-            # OpenV2Gx/src/test/main_commandlineinterface.c
-            EVMaximumCurrentLimit = 250
-            if self.accuMaxCurrent >= EVMaximumCurrentLimit:
-                return EVMaximumCurrentLimit
-            return self.accuMaxCurrent
+        # The overall current limit is currently hardcoded in
+        # OpenV2Gx/src/test/main_commandlineinterface.c
+        EVMaximumCurrentLimit = 250
+        if self.accuMaxCurrent >= EVMaximumCurrentLimit:
+            return EVMaximumCurrentLimit
+        return self.accuMaxCurrent
         #todo: get max charging current from the BMS
         self.accuMaxCurrent = 10
         return self.accuMaxCurrent
@@ -265,7 +263,7 @@ class hardwareInterface():
         return self.simulatedSoc
         
     def getEVchargePermit(self)
-        self.evChargePermit = GPIO.input(pin_k)
+        self.evChargePermit = not GPIO.input(pin_k)     # pin_k is active(LOW)
         return self.evChargePermit
 
     def stopRequest(self):
@@ -337,7 +335,7 @@ class hardwareInterface():
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
                                 
-        self.evChargePermit = GPIO.input(pin_k)      # read signal_k (LOW active)
+        self.evChargePermit = getEVchargePermit()   # read signal_k
 
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = 0           # CAN-ID 0x100
@@ -362,9 +360,9 @@ class hardwareInterface():
         self.buttonDebounceCounter = 0
         self.buttonStopPhaseCounter = 0
 
-        self.inletVoltage = 0.0 # volts ring-buffer
+        self.inletVoltage = 0.0     # volts ring-buffer
         self.accuVoltage = 0.0
-        self.lock_confirmed = False  # Confirmation from hardware
+        self.lock_confirmed = False # Confirmation from hardware
         self.cp_pwm = 0.0
         self.soc_percent = 0.0
         self.capacity = 0.0
@@ -523,24 +521,24 @@ class hardwareInterface():
                     self.addToTrace("CHAdeMO: minChargeCurrent = %d Amps" % new_value)
                     self.minChargeCurrent = new_value
  
-                new_value = (message.data[3]<<8 + message.data[2]) * 0.01
+                new_value =  int(message.data[2]) + int(message.data[3])*256
                 if(self.minBatteryVolts != new_value):
                     self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
                     self.minBatteryVolts = new_value
                     
-                new_value = (message.data[5]<<8 + message.data[4]) * 0.01
+                new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.maxBatteryVolts != new_value):
                     self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
                     self.maxBatteryVolts = new_value
 
             if message.arbitration_id == 0x101:
-                new_value = (message.data[6]<<8 + message.data[5]) * 0.11
+                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.11
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
                     
             if message.arbitration_id == 0x102:
-                new_value = (message.data[2]<<8 + message.data[1]) * 0.01
+                new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVolts != new_value):
                     self.addToTrace("CHAdeMO: targetBatteryVolts = %d V" % new_value)
                     self.targetBatteryVolts = new_value
@@ -549,6 +547,7 @@ class hardwareInterface():
                 if(self.chargeCurrentRequest != new_value):
                     self.addToTrace("CHAdeMO: chargeCurrentRequest = %d A" % new_value)
                     self.chargeCurrentRequest = new_value
+                    self.lastReceptionTime = time()
                     
                 new_value = message.data[4]
                 if(self.evFaultBits != new_value):
@@ -559,39 +558,22 @@ class hardwareInterface():
                 if(self.evStatusBits != new_value):
                     self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
                     self.evStatusBits = new_value
+                    # TODO
+                    # Evaluate and show individual status bits
 
                 new_value = message.data[6]
-                if(self.evStateOfCharge != message.data[6]):
+                if(self.evStateOfCharge != new_value):
                     self.addToTrace("CHAdeMO: evStateOfCharge = %d" % new_value)
                     self.evStateOfCharge = new_value
 
-            # now send charger parameters back to the car for validation 
+            # send *maximum* charger parameters back to the car for validation 
             msg = can.Message(arbitration_id=0x108, data=[ 0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
+            # send *actual* charger values back to the car for comparison with requested values
             status = 4 if self.maxChargerVoltage > 0 else 0  #report connector locked
             msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
-
-        ############################################## HWT edit  ########################
-        if message.arbitration_id == 0x102:
-            new_value = (message.data[2]<<8 + message.data[1])
-            if(  ##HWT edit here...
-            vtg = (message.data[2] << 8) + message.data[1]
-            if self.accuMaxVoltage != new_value:
-                 self.addToTrace("CHAdeMO: Set target voltage to %d V" % new_value)
-            self.accuMaxVoltage = new_value
-
-            if self.accuMaxCurrent != message.data[3]:
-                self.addToTrace("CHAdeMO: Set current request to %d A" % message.data[3])
-            self.accuMaxCurrent = message.data[3]
-            self.lastReceptionTime = time()
-
-            if self.capacity > 0:
-                soc = message.data[6] / self.capacity * 100
-                if self.simulatedSoc != soc:
-                    self.addToTrace("CHAdeMO: Set SoC to %d %%" % soc)
-                self.simulatedSoc = soc
 
         #if nothing was received for over a second, time out
         if self.lastReceptionTime < (time() - 1):
@@ -605,27 +587,32 @@ def myPrintfunction(s):
     print("myprint " + s)
 
 if __name__ == "__main__":
-    print("Testing hardwareInterface...")
+    print("Testing hardwareInterface for ~30s...")
+    # create instance of hardwareInterface
     hw = hardwareInterface(myPrintfunction)
-    for i in range(0, 350):
-        hw.mainfunction()
-        if (i==20):
-            hw.setChargerParameters(500, 125)
-            hw.setChargerVoltageAndCurrent(360, 100)
-        if (i==50):
-            hw.setStateC()
-        if (i==100):
-            hw.setStateB()
-        if (i==150):
-            hw.setStateC()
-            hw.setPowerRelayOn()
+    hw.plugged_in = True        # charging session starts
+    hw.setChargerParameters(500, 125)   # set typical EVSE Max volts and amps
+    
+   # loop 1000 times to give ~30s at ~30mS per scan
+    for i in range(0, 1000):
+        hw.mainfunction()       # poll hardware interface
+        if (i==33):             # after ~1s...
+            hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms
+                                # during this time the Max charger values are sent to the EV
+        if (i==66):             # by now, EV should assert signal 'k' ChargePermit (and CAN status?) 
+            hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
+                                # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
+        if (i==100):            # EV requests voltage and current via CAN message 0x102
+            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest):
         if (i==200):
-            hw.setStateB()
-            hw.setPowerRelayOff()
-        if (i==250):
-            hw.setRelay2On()
-        if (i==300):
-            hw.setRelay2Off()
-        sleep(0.01)
+            pass
+        if (i==500):
+            pass
+        if (i==750):            # set EV current demand to zero
+            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0):
+        if (i==900):
+            hw.setSS22_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
+        sleep(0.03)             # wait for approx. scan time
+        
     hw.close()
-    print("finished.")
+    print("hardwareInterface test finished.")

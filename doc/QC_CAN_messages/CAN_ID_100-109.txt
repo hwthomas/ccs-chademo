@@ -52,7 +52,7 @@ batteryVoltageDeviation         36      1
 statusBits for vehicle          40      8       Intel       [5]     1       0|255       0/1
 evReadyToCharge                 40      1
 evNotInPark                     41      1
-evCdMversion                    42      1
+evCHAdeMoVersion                42      1
 evContactorOpen                 43      1
 evNormalStopRequest             44      1
 

@@ -1,6 +1,9 @@
 #
 # file fsmCdM.py:   State machine for the car CHAdeMO sequence
 #
+# The state machine can be in only one of its states at any time, so that on each
+# call of its mainfunction only one stateFunction will be executed.
+#
 
 import time     # for time.sleep()
 
@@ -58,13 +61,14 @@ class fsmCHdeMO():
             s = "End"
         return s
 
-    def enterState(self, n):
+    def enterState(self, n):    # call to transition from stateCurrent to stateNext (n)
         self.stateNext = n      # set up next state to be entered
-        # Check for fsm single-step enabled, and if so wait for confirmation
-        if (self.fsm_single_step):
+        # Check for fsm single-step enabled, and if so wait for confirmation via self.stateNextConfirmed
+        if (self.fsm_single_step and self.stateNextConfirmed):
             self.addToTrace("from " + str(self.stateCurrent) + ":" + self.prettifyState(self.stateCurrent) + " entering " + str(n) + ":" + self.prettifyState(n))
             self.stateCurrent = n
             self.cyclesInState = 0
+            self.stateNextConfirmed = False
         else:
             pass    # enter another scan with the current state unchanged
 
@@ -91,8 +95,6 @@ class fsmCHdeMO():
         # We have received one (or more) CAN messages.  
         # Decode the message and evaluate the data values.
         # stay in this loop until the user decides to move on
-        #self.hardwareInterface.resetSimulation()
-        #self.enterState(stateWaitForSupportedApplicationProtocolResponse)
         
     def stateFunctionCheckingCompatibility(self):
         # check charger and EV limits for compatibility
@@ -102,12 +104,22 @@ class fsmCHdeMO():
         self.publishStatus("ERROR reported")
         # Initiate the safe-shutdown-sequence.
         self.addToTrace("Shutdown-sequence: setting CP state B")
-        self.hardwareInterface.setStateB() # setting CP line to B disables the charger the current flow.
+        self.hardwareInterface.setStateB() # setting CP line to B disables the charger current flow.
         self.DelayCycles = 66 # 66*30ms=2s for charger shutdown
-        self.enterState(stateShutDown)
+        self.enterState(stateShuttingDown)
 
     def stateFunctionShuttingDown(self):
-        # wait state, to allow car to stop CAN messages and set CCS StateC -> StateB
+        # wait state, to allow car to request zero current and remove charge permit
+        if (self.DelayCycles>0):
+            self.DelayCycles-=1
+            return
+        # Now the current flow is stopped by the charger. We can safely open the contactors:
+        self.addToTrace("Safe-shutdown-sequence: opening contactors")
+        self.hardwareInterface.setPowerRelayOff()
+        self.hardwareInterface.setRelay2Off()
+        self.DelayCycles = 33 # 33*30ms=1s for opening the contactors
+        self.enterState(stateSafeShutDownWaitForContactorsOpen)
+
         self.addToTrace("Shutdown-sequence: remove CHAdeMO signal SS1")
         self.addToTrace("Shutdown-sequence: Set CCS Control Pilot (CP) to StateB")
         self.hardwareInterface.triggerConnectorUnlocking()
@@ -137,6 +149,8 @@ class fsmCHdeMO():
     def stopCharging(self):
         # API function to stop the charging.
         self.isUserStopRequest = True
+        self.fsm_single_step = False
+        self.enterState(stateShuttingDown)
 
     def reInit(self):
         self.addToTrace("re-initializing fsmCHdeMO")
@@ -157,6 +171,7 @@ class fsmCHdeMO():
         self.hardwareInterface = hardwareInterface
         self.stateCurrent = stateNotYetInitialized  # current state 
         self.stateNext = None                       # next state to be entered
+        self.stateNextConfirmed = False             # when single-stepping
         self.fsm_single_step = getConfigValueBool("fsm_single_step")
         self.cyclesInState = 0
         self.DelayCycles = 0
