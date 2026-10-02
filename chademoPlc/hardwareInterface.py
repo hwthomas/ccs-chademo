@@ -262,7 +262,10 @@ class hardwareInterface():
         return self.simulatedSoc
 
     def getEVchargePermit(self):
-        self.evChargePermit = not GPIO.input(pin_k)     # pin_k is active(LOW)
+        new_value = not GPIO.input(pin_k)     # pin_k is active(LOW)
+        if(new_value != self.evChargePermit):
+            self.addToTrace("CHAdeMO: EVchargePermit = = %" % new_value)
+            self.evChargePermit = new_value
         return self.evChargePermit
 
     def stopRequest(self):
@@ -334,7 +337,7 @@ class hardwareInterface():
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
 
-        self.evChargePermit = 0.0           # input of signal_k via GPIO
+        self.evChargePermit = 0             # input of signal_k via GPIO
 
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = 0           # CAN-ID 0x100
@@ -553,9 +556,10 @@ class hardwareInterface():
                 new_value = message.data[5]
                 if(self.evStatusBits != new_value):
                     self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
-                    self.evStatusBits = new_value
+                    statusChange = new_value xor self.evStatusBits
                     # TODO
                     # Evaluate and show individual status bits
+                    self.evStatusBits = new_value
 
                 new_value = message.data[6]
                 if(self.evStateOfCharge != new_value):
