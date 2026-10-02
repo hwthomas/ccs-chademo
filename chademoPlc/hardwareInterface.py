@@ -461,9 +461,7 @@ class hardwareInterface():
     def isCableCheckOk(self):
         return self.cableChecker.isCableCheckOk()
 
-    def close(self):
-        if (self.isSerialInterfaceOk):
-            self.ser.close()
+    def close(self):            # close hardwareInterface cleanly
         if(getConfigValue("digital_output_device") == "rpi_gpio"):
             GPIO.cleanup()
 
@@ -601,6 +599,7 @@ if __name__ == "__main__":
             hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
                                 # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
         if (i==100):            # EV requests voltage and current via CAN message 0x102
+                                # reflect these values to charger, and hence back to EV via CAN message
             hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
         if (i==200):
             pass
@@ -614,5 +613,5 @@ if __name__ == "__main__":
             hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
         sleep(0.03)             # wait for approx. scan time
 
-    hw.close()
+    hw.close()                  # close hardwareInterface cleanly
     print("hardwareInterface test finished.")
