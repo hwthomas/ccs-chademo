@@ -588,30 +588,33 @@ if __name__ == "__main__":
     hw = hardwareInterface(myPrintfunction)
     hw.plugged_in = True        # charging session starts
     hw.setChargerParameters(500, 125)   # set typical EVSE Max volts and amps
-    
-   # loop 1000 times to give ~30s at ~30mS per scan
-    for i in range(0, 1000):
-        hw.mainfunction()       # poll hardware interface
-        if (i==33):             # after ~1s...
-            hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms
-                                # during this time the Max charger values are sent to the EV
-        if (i==66):             # by now, EV should assert signal 'k' ChargePermit (and CAN status?) 
-            hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
-                                # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
-        if (i==100):            # EV requests voltage and current via CAN message 0x102
-                                # reflect these values to charger, and hence back to EV via CAN message
-            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
-        if (i==200):
-            pass
-        if (i==500):
-            pass
-        if (i==700):            # set EV current demand to zero
-            hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0)
-        if (i==800):            # set EV current demand to zero
-            hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
-        if (i==900):
-            hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
-        sleep(0.03)             # wait for approx. scan time
 
-    hw.close()                  # close hardwareInterface cleanly
+    try:
+        # loop 1000 times to give ~30s at ~30mS per scan
+        for i in range(0, 1000):
+            hw.mainfunction()       # poll hardware interface
+            if (i==33):             # after ~1s...
+                hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms
+                                    # during this time the Max charger values are sent to the EV
+            if (i==66):             # by now, EV should assert signal 'k' ChargePermit (and CAN status?) 
+                hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
+                                    # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
+            if (i==100):            # EV requests voltage and current via CAN message 0x102
+                                    # reflect these values to charger, and hence back to EV via CAN message
+                hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
+            if (i==200):
+                pass
+            if (i==500):
+                pass
+            if (i==700):            # set EV current demand to zero
+                hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0)
+            if (i==800):            # set EV current demand to zero
+                hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
+            if (i==900):
+                hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
+            sleep(0.03)             # wait for approx. scan time
+    except:
+        KeyboardInterrupt:          # ctrl-C quits if all else fails!
+            pass
+    hw.close()                      # close hardwareInterface cleanly (TODO: needs more work to be safe)
     print("hardwareInterface test finished.")
