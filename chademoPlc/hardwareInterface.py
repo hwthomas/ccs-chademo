@@ -605,7 +605,8 @@ if __name__ == "__main__":
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
             if (i==100):            # EV requests voltage and current via CAN message 0x102
                                     # reflect these values to charger, and hence back to EV via CAN message
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
+                                    # however, as first test, set to typical precharge value
+                hw.setChargerVoltageAndCurrent(375, 2)
             if (i==200):
                 hw.evStatusBits = 1 # force evStatus bits to new value (0 initially)
             if (i==500):
