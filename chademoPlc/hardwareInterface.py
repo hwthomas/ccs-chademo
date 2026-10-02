@@ -607,7 +607,7 @@ if __name__ == "__main__":
                                     # reflect these values to charger, and hence back to EV via CAN message
                 hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
             if (i==200):
-                pass
+                hw.evStatusBits = 1 # force evStatus bits to new value (0 initially)
             if (i==500):
                 pass
             if (i==700):            # set EV current demand to zero
