@@ -16,8 +16,8 @@ if (getConfigValue("digital_output_device") == "rpi_gpio"):
 
     # RPI4b GPIO output definitions for interface board (https://github.com/hwthomas/ccs-chademo/wiki/)
     pinCp  = 40     # alter these for our interface boards
-    pinSS1 = 29     # d1/SS1 Charge sequence signal 1
-    pinSS2 = 13     # d2/SS2 Charge sequence signal 2
+    pinSS1 = 13     # d1/SS1 Charge sequence signal 1
+    pinSS2 = 29     # d2/SS2 Charge sequence signal 2
     pinWdg = 33     # pinWdg WatchDog charge pump (future)
 
     # GPIO input definitions
