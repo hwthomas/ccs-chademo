@@ -35,21 +35,21 @@ if (getConfigValue("digital_output_device") == "rpi_gpio"):
 # As we use the CHAdeMO backend, we need to use CAN - (pip3 install python-can)  
 if (getConfigValue("charge_parameter_backend")=="chademo"):
     import can
+    print('Bringing up CAN (channel can0) at 500kbps...')
+    os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
+    os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
+
     filters = [
        {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
     try:
-        self.canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
+        canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
     except OSError:
         print('Cannot find CAN board.')
         exit
-
-    print('Bringing up CAN (channel can0) at 500kbps...')
-    os.system("sudo /sbin/ip link set can0 down")   # prevent 'Busy' error if can0 already UP
-    os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
     # Allow some time for CAN to start up
-    sleep(3)
+    sleep(1.0)
 
 class hardwareInterface():
     def needsSerial(self):
@@ -299,7 +299,7 @@ class hardwareInterface():
             return True
 
     def initPorts(self):
-        pass    # nothing to do here now
+        self.canbus = canbus    # just set up class variable for can0
 
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None, homeplughandler=None, mode=C_PEV_MODE):
         self.callbackAddToTrace = callbackAddToTrace
@@ -421,7 +421,7 @@ class hardwareInterface():
 
         self.lastStatePublish = 0
         self.lastPowerReqPublish = 0
-        self.initPorts()                # set up CAN driver message filters 
+        self.initPorts()                # set up CAN driver class variable 
 
     def resetSimulation(self):
         self.simulatedInletVoltage = 0.0 # volts
