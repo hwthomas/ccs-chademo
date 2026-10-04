@@ -524,7 +524,7 @@ class hardwareInterface():
                 sys.exit(0)
 
     def mainfunction_chademo(self):
-        readEVchargePermit()            # poll EVchargePermit input (signal k) on each scan
+        self.readEVchargePermit()       # poll EVchargePermit input (signal k) on each scan
         message = self.canbus.recv(0)   # non-blocking check for (any) CAN-bus message
         #
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
