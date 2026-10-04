@@ -61,7 +61,10 @@ if __name__ == "__main__":
             except can.CanError:
                 print("Message NOT sent")
             except KeyboardInterrupt:
-                bus.shutdown()
+                pass 
 
         print("All lines in log sent")
         bus.shutdown()
+        os.system("sudo /sbin/ip link set can0 down")
+   pass     # can_file gets closed at end of with...
+    
