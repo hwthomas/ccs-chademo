@@ -32,9 +32,25 @@ if (getConfigValue("digital_output_device") == "rpi_gpio"):
     for pin in inputs:
         GPIO.setup(pin, GPIO.IN)
 
+# As we use the CHAdeMO backend, we need to use CAN - (pip3 install python-can)  
 if (getConfigValue("charge_parameter_backend")=="chademo"):
-    # As we use the CHAdeMO backend, we need to use CAN - (pip3 install python-can)  
     import can
+    if self.chademo_backend:
+        filters = [
+           {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
+           {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
+           {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
+    try:
+        self.canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
+    except OSError:
+        print('Cannot find CAN board.')
+        exit
+
+    print('Bringing up CAN (channel can0) at 500kbps...')
+    os.system("sudo /sbin/ip link set can0 down")   # prevent 'Busy' error if can0 already UP
+    os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
+    # Allow some time for CAN to start up
+    sleep(3)
 
 class hardwareInterface():
     def needsSerial(self):
@@ -157,9 +173,7 @@ class hardwareInterface():
             tSq += 2*sq
         sleep(postDelay)
 
-#
 # Where is this relay confirmation required in CHAdeMO?  - [fsmPev.py line 603]
-#
     def getPowerRelayConfirmation(self):
         if (getConfigValue("digital_output_device")=="rpi_gpio"):
             pass    # return self.contactor_confirmed
@@ -222,7 +236,7 @@ class hardwareInterface():
         return self.EvsePhysicalCurrent
 
     def getAccuVoltage(self):
-        if (getConfigValue("charge_parameter_backend") == "chademo"):
+        if self.chademo_backend:
             return self.accuVoltage
         #todo: get real measured voltage from the accu. (via OBDII dongle?)
         self.accuVoltage = 230
@@ -240,7 +254,7 @@ class hardwareInterface():
         return self.accuMaxCurrent
 
     def getAccuMaxVoltage(self):
-        if (getConfigValue("charge_parameter_backend")=="chademo"):
+        if self.chademo_backend:
             return self.accuMaxVoltage #set by CAN
         elif getConfigValue("charge_target_voltage"):
             self.accuMaxVoltage = getConfigValue("charge_target_voltage")
@@ -286,21 +300,7 @@ class hardwareInterface():
             return True
 
     def initPorts(self):
-        if (getConfigValue("charge_parameter_backend") == "chademo"):
-            filters = [
-               {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
-               {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
-               {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
-        try:
-            self.canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
-        except OSError:
-            print('Cannot find CAN board.')
-            exit()
-            
-        print('Bringing up CAN (channel can0) at 500kbps...')
-        os.system("sudo /sbin/ip link set can0 down")   # prevent 'Busy' error if can0 already UP
-        os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
-
+        pass    # nothing to do here now
 
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None, homeplughandler=None, mode=C_PEV_MODE):
         self.callbackAddToTrace = callbackAddToTrace
@@ -313,7 +313,8 @@ class hardwareInterface():
         # so it stays right at the top of __init__.
         self.traceEnabled = getConfigValueBool("evse_printtrace")
 
-        # Ditto for the CHAdeMO backend, which needs checking many times on each scan
+        # ditto for the CHAdeMO backend, which is checked many times on each scan
+        # NB: only use this class variable short-form after class has been created
         if (getConfigValue("charge_parameter_backend")=="chademo"):
             self.chademo_backend = True
         
@@ -486,6 +487,8 @@ class hardwareInterface():
     def close(self):            # close hardwareInterface cleanly
         if(getConfigValue("digital_output_device") == "rpi_gpio"):
             GPIO.cleanup()
+        if self.chademo_backend:
+            self.canbus.shutdown()  # shut CAN-bus down cleanly  
 
     def showOnDisplay(self, s1, s2, s3):
         pass
@@ -508,7 +511,7 @@ class hardwareInterface():
                     #  0.5 charging needs ~8s, good for automatic test case runs.
                     self.simulatedSoc = self.simulatedSoc + deltaSoc
 
-        if (getConfigValue("charge_parameter_backend")=="chademo"):
+        if self.chademo_backend:
            self.mainfunction_chademo()
 
         if (self.mode==C_EVSE_MODE):
