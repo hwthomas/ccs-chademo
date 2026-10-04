@@ -313,11 +313,9 @@ class hardwareInterface():
         # so it stays right at the top of __init__.
         self.traceEnabled = getConfigValueBool("evse_printtrace")
 
-        # CHAdeMO requires the use of CAN-bus, which in turn needs the CAN driver setting up
+        # Ditto for the CHAdeMO backend, which needs checking many times on each scan
         if (getConfigValue("charge_parameter_backend")=="chademo"):
-
-        
-        
+            self.chademo_backend = True
         
         # The following conditional code enables (future) hardware charger extensions
         if (self.mode==C_EVSE_MODE):
