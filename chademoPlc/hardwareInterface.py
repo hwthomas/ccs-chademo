@@ -291,7 +291,15 @@ class hardwareInterface():
                {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
                {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
                {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
+        try:
             self.canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
+        except OSError:
+            print('Cannot find CAN board.')
+            exit()
+            
+        print('Bringing up CAN (channel can0) at 500kbps...')
+        os.system("sudo /sbin/ip link set can0 down")   # prevent 'Busy' error if can0 already UP
+        os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 
 
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None, homeplughandler=None, mode=C_PEV_MODE):
@@ -305,6 +313,12 @@ class hardwareInterface():
         # so it stays right at the top of __init__.
         self.traceEnabled = getConfigValueBool("evse_printtrace")
 
+        # CHAdeMO requires the use of CAN-bus, which in turn needs the CAN driver setting up
+        if (getConfigValue("charge_parameter_backend")=="chademo"):
+
+        
+        
+        
         # The following conditional code enables (future) hardware charger extensions
         if (self.mode==C_EVSE_MODE):
             if (getConfigValueBool('evse_simulate_precharge')):
@@ -409,7 +423,7 @@ class hardwareInterface():
 
         self.lastStatePublish = 0
         self.lastPowerReqPublish = 0
-        self.initPorts()
+        self.initPorts()                # set up CAN driver message filters 
 
     def resetSimulation(self):
         self.simulatedInletVoltage = 0.0 # volts
@@ -601,13 +615,14 @@ if __name__ == "__main__":
     hw.setChargerParameters(500, 125)   # set typical EVSE Max (available) volts and amps
 
     try:
-        # loop 1000 times to give ~30s at ~30mS per scan
+        # loop 1000 times to give ~30s at ~30mS per scan, and start scanning hardwareInterface.mainfunction each time
         for i in range(0, 1000):
             hw.mainfunction()       # poll hardware interface
             if (i==33):             # after ~1s...
-                hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms
-                                    # during this time the Max charger values are sent to the EV
-            if (i==66):             # by now, EV should assert signal 'k' ChargePermit (and CAN status?) 
+                hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
+                                    # the EV's maximum Voltage and Current requirements to the charger
+                print("Start EV CAN-bus and inform charger of Maximum Voltage and Current needs")
+            if (i==99):             # by now, EV should assert signal 'k' ChargePermit (and CAN status?) 
                 hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
             if (i==100):            # EV requests voltage and current via CAN message 0x102

@@ -3,7 +3,7 @@
 # and generates CAN messages to be sent via the Waveshare CAN HAT on the RPi.
 #
 # simple log file 'short.log' extracted from 'ZE1-chademo-charging.log'
-# in 'https://github.com/dalathegreat/EV-CANlogs' repo. Layout as per-
+# in 'https://github.com/dalathegreat/EV-CANlogs' repo. Layout as below:-
 
 # -1688467625333184,00000100,false,Rx,0,8,06,00,00,00,B3,01,FF,00,
 # -1688467625323152,00000101,false,Rx,0,8,00,E4,00,00,00,00,00,00,
@@ -14,7 +14,7 @@
 
 import can      # for message structure, construction and transmission
 import time     # for sleep and timings
-import sys
+import sys      # for starting CAN-bus via 'ip link' commands
 import os
 
 if __name__ == "__main__":
