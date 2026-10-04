@@ -576,7 +576,7 @@ class hardwareInterface():
 
                 new_value = message.data[5]
                 if(self.evStatusBits != new_value):
-                    self.addToTrace("CHAdeMO: evStatusBits = %b" % new_value)
+                    self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
                     statusChange = new_value ^ self.evStatusBits    # xor new and old to get changes
                     # TODO
                     # Evaluate and show individual status bits
