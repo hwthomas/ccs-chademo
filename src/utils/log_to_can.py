@@ -66,5 +66,5 @@ if __name__ == "__main__":
         print("All lines in log sent")
         bus.shutdown()
         os.system("sudo /sbin/ip link set can0 down")
-   pass     # can_file gets closed at end of with...
-    
+    pass     # can_file gets closed at end of with...
+
