@@ -35,11 +35,10 @@ if (getConfigValue("digital_output_device") == "rpi_gpio"):
 # As we use the CHAdeMO backend, we need to use CAN - (pip3 install python-can)  
 if (getConfigValue("charge_parameter_backend")=="chademo"):
     import can
-    if self.chademo_backend:
-        filters = [
-           {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
-           {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
-           {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
+    filters = [
+       {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
+       {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
+       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
     try:
         self.canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
     except OSError:
