@@ -628,7 +628,7 @@ if __name__ == "__main__":
             if (i==100):            # EV requests voltage and current via CAN message 0x102
                                     # reflect these values to charger, and hence back to EV via CAN message
                 print("Charger sends back *actual* values to EV")
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, hw.chargeCurrentRequest)
+                hw.setChargerVoltageAndCurrent(hw.targetBatteryVoltage, hw.chargeCurrentRequest)
             if (i==200):
                 pass
             if (i==500):
