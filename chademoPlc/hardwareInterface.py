@@ -365,7 +365,7 @@ class hardwareInterface():
         self.estChargeTimeMins = 0
         self.ratedCapacitykWh = 0
 
-        self.targetBatteryVolts = 0     # CAN-ID 0x102 EV requests during charge phase
+        self.targetBatteryVoltage = 0   # CAN-ID 0x102 EV requests during charge phase
         self.chargeCurrentRequest = 0
         self.evFaultBits = 0
         self.evStatusBits = 0
@@ -542,14 +542,14 @@ class hardwareInterface():
                     self.minChargeCurrent = new_value
 
                 new_value =  int(message.data[2]) + int(message.data[3])*256
-                if(self.minBatteryVolts != new_value):
-                    self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
-                    self.minBatteryVolts = new_value
+                if(self.minBatteryVoltage != new_value):
+                    self.addToTrace("CHAdeMO: minBatteryVoltage = %d V" % new_value)
+                    self.minBatteryVoltage = new_value
 
                 new_value = int(message.data[4]) + int(message.data[5])*256
-                if(self.maxBatteryVolts != new_value):
-                    self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
-                    self.maxBatteryVolts = new_value
+                if(self.maxBatteryVoltage != new_value):
+                    self.addToTrace("CHAdeMO: maxBatteryVoltage = %d V" % new_value)
+                    self.maxBatteryVoltage = new_value
 
             if message.arbitration_id == 0x101:
                 new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.11
@@ -559,9 +559,9 @@ class hardwareInterface():
 
             if message.arbitration_id == 0x102:
                 new_value = int(message.data[1]) + int(message.data[2])*256
-                if(self.targetBatteryVolts != new_value):
-                    self.addToTrace("CHAdeMO: targetBatteryVolts = %d V" % new_value)
-                    self.targetBatteryVolts = new_value
+                if(self.targetBatteryVoltage != new_value):
+                    self.addToTrace("CHAdeMO: targetBatteryVoltage = %d V" % new_value)
+                    self.targetBatteryVoltage = new_value
 
                 new_value = message.data[3]
                 if(self.chargeCurrentRequest != new_value):
@@ -634,9 +634,9 @@ if __name__ == "__main__":
             if (i==500):
                 pass
             if (i==700):            # set EV current demand to zero
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0)
+                hw.setChargerVoltageAndCurrent(hw.targetBatteryVoltage, 0)
             if (i==800):            # set EV current demand to zero
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVolts, 0)
+                hw.setChargerVoltageAndCurrent(hw.targetBatteryVoltage, 0)
                 hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
             if (i==900):
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
