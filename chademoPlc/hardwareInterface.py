@@ -277,7 +277,7 @@ class hardwareInterface():
     def readEVchargePermit(self):               # read GPIO input when called
         new_value = not GPIO.input(pin_k)       # pin_k is active(LOW)
         if(new_value != self.evChargePermit):
-            self.addToTrace("CHAdeMO: EVchargePermit = = %" % new_value)
+            self.addToTrace("CHAdeMO: EVchargePermit = %X" % new_value)
             self.evChargePermit = new_value     # update via mainfunction only
 
     def getEVchargePermit(self):                # return EVchargePermit
