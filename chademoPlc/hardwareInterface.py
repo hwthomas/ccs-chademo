@@ -560,6 +560,7 @@ class hardwareInterface():
                     self.ratedCapacitykWh = new_value
 
             if message.arbitration_id == 0x102:
+                self.lastReceptionTime = time()     # record CAN volts and current requests
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("CHAdeMO: targetBatteryVoltage = %d V" % new_value)
@@ -569,7 +570,6 @@ class hardwareInterface():
                 if(self.chargeCurrentRequest != new_value):
                     self.addToTrace("CHAdeMO: chargeCurrentRequest = %d A" % new_value)
                     self.chargeCurrentRequest = new_value
-                    self.lastReceptionTime = time()     # record CAN volts and current requests
 
                 new_value = message.data[4]
                 if(self.evFaultBits != new_value):
@@ -598,7 +598,7 @@ class hardwareInterface():
             msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
-        #if nothing was received for over a second, time out
+        #if no CAN-ID 0x102 was received for over a second, time out
         if self.lastReceptionTime < (time() - 1):
             if self.accuMaxCurrent != 0:
                 self.addToTrace("CHAdeMO: No current limit update for over 1s, setting current to 0")
