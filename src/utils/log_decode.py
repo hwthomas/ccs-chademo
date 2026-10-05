@@ -50,22 +50,25 @@ class can_decode():
         self.traceEnabled = getConfigValueBool("evse_printtrace")
        
         # The following class variables are for testing the CHAdeMO hardware
+        
+        # EV tells charger what it *needs* via CAN-ID 0x100        
         self.minChargeCurrent = -1          # CAN-ID 0x100
         self.minBatteryVoltage = -1
         self.maxBatteryVoltage = -1
         self.chargeRateIndication = 100
         
-        self.maxChargeTime = -1             # CAN-ID 0x101
-        self.estChargeTime = -1
+        self.maxChargeTimeMins = -1         # CAN-ID 0x101
+        self.estChargeTimeMins = -1
         self.ratedCapacitykWh = -1
             
-        self.targetBatteryVoltage = -1      # CAN-ID 0x102
+        self.targetBatteryVoltage = -1      # CAN-ID 0x102  EV requests during charge phase
         self.chargeCurrentRequest = -1
         self.evFaultBits = -1
         self.evStatusBits = -1
         self.evStateOfCharge = -1
         
-        self.maxChargerVoltage = -1         # CAN-ID 0x108
+        # Charger tells EV the maximum it can supply via CAN-ID 0x108
+        self.maxChargerVoltage = -1         # CAN-ID 0x108  charger sends maxAvailable
         self.maxChargerCurrent = -1
         
         self.chargerVoltage = -1            # CAN-ID 0x109
@@ -101,17 +104,17 @@ class can_decode():
 
             if message.arbitration_id == 0x101:
                 new_value = (message.data[1]) * 10/60
-                if(self.maxChargeTime != new_value):
-                    self.addToTrace("0x101: maxChargeTime = %d mins" % new_value)
+                if(self.maxChargeTimeMins != new_value):
+                    self.addToTrace("0x101: maxChargeTimeMins = %d mins" % new_value)
                     self.maxChargeTime = new_value
 
-                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.11
+                new_value = int(message.data[5]) + int(message.data[6])*256
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
                     
             if message.arbitration_id == 0x102:
-                new_value = (int(message.data[1]) + int(message.data[2])*256)
+                new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("0x102: targetBatteryVoltage = %d V" % new_value)
                     self.targetBatteryVoltage = new_value
@@ -137,7 +140,7 @@ class can_decode():
                     self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x108:
-                new_value = (int(message.data[1]) + int(message.data[2])*256)
+                new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.maxChargerVoltage != new_value):
                     self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
                     self.maxChargerVoltage = new_value

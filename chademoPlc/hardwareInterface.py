@@ -554,7 +554,7 @@ class hardwareInterface():
                     self.maxBatteryVoltage = new_value
 
             if message.arbitration_id == 0x101:
-                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.11
+                new_value = int(message.data[5]) + int(message.data[6])*256
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
