@@ -630,7 +630,7 @@ if __name__ == "__main__":
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
             if (i==200):            # EV requests voltage and current via CAN message 0x102
                 print("Set test Charger Voltage and Current values to send back to EV")
-                hw.setChargerVoltageAndCurrent(360, 0)      # set typical HV volts for 60% SOC (40% - 70%)
+                hw.setChargerVoltageAndCurrent(370, 0)      # set typical HV volts for 60% SOC (40% - 70%)
                                     # these values are sent hence back to EV via CAN message 0x109
             if (i==500):            # 
                 pass
