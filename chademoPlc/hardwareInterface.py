@@ -594,7 +594,7 @@ class hardwareInterface():
             self.canbus.send(msg)
 
             # send *actual* charger values back to the car via CAN message 0x109 for comparison with requested values during charging loop
-            status |= 4         # *always* report locked (adapter has no lock at present)
+            status = 4          # *always* report locked (adapter has no lock at present)
             msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
