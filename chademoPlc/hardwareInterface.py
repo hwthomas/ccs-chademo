@@ -371,12 +371,15 @@ class hardwareInterface():
         self.evStatusBits = 0
         self.evStateOfCharge = 0
 
+        self.lastReceptionTime = 0      # records CAN volts & amps requests from EV
+
         # Charger tells EV the maximum it can supply via CAN-ID 0x108
         self.maxChargerVoltage = 0      # CAN-ID 0x108 charger sends maxAvailable
         self.maxChargerCurrent = 2
 
         self.chargerVoltage = 0         # CAN-ID 0x109 charger sends actual to EV
         self.chargerCurrent = 0
+
 
         # end of CHAdeMO current variables
 
@@ -396,7 +399,6 @@ class hardwareInterface():
         self.accuMaxCurrent = 0.0
         self.contactor_confirmed = False    # Confirmation from hardware
         self.plugged_in = None              # None means "not known yet"
-        self.lastReceptionTime = 0
 
         self.infonumber = 0     # the following are new, and only for Charger project?
         self.focccicapeCycleCounter = 0
@@ -567,7 +569,7 @@ class hardwareInterface():
                 if(self.chargeCurrentRequest != new_value):
                     self.addToTrace("CHAdeMO: chargeCurrentRequest = %d A" % new_value)
                     self.chargeCurrentRequest = new_value
-                    self.lastReceptionTime = time()
+                    self.lastReceptionTime = time()     # record CAN volts and current requests
 
                 new_value = message.data[4]
                 if(self.evFaultBits != new_value):
