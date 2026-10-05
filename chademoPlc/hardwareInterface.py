@@ -630,12 +630,13 @@ if __name__ == "__main__":
             if (i==100):            # EV requests voltage and current via CAN message 0x102
                                     # reflect these values to charger, and hence back to EV via CAN message
                 print("Set test Charger Voltage and Current values to send back to EV")
-                hw.setChargerVoltageAndCurrent(375, 0)      # typical HV volts for 80% SOC
+                hw.setChargerVoltageAndCurrent(360, 0)      # set typical HV volts for 60% SOC (40% - 70%)
             if (i==200):
                 pass
             if (i==500):
                 pass
             if (i==700):            # set EV current demand to zero
+                print("Set test Charger Current request to zero")
                 hw.setChargerVoltageAndCurrent(375, 0)
             if (i==800):            # set EV current demand to zero
                 hw.setChargerVoltageAndCurrent(375, 0)
