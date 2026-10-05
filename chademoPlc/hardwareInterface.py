@@ -225,7 +225,7 @@ class hardwareInterface():
 
     def getInletVoltage(self):
         # uncomment this line, to take the simulated inlet voltage instead of the really measured
-        # self.inletVoltage = self.simulatedInletVoltage
+        self.inletVoltage = self.simulatedInletVoltage
         return self.inletVoltage
 
     def getEvsePhysicalVoltage(self):
@@ -375,7 +375,7 @@ class hardwareInterface():
         self.maxChargerVoltage = 0      # CAN-ID 0x108 charger sends maxAvailable
         self.maxChargerCurrent = 2
 
-        self.chargerVoltage = 0         # CAN-ID 0x109 charger sends *actual*
+        self.chargerVoltage = 0         # CAN-ID 0x109 charger sends actual to EV
         self.chargerCurrent = 0
 
         # end of CHAdeMO current variables
@@ -398,7 +398,7 @@ class hardwareInterface():
         self.plugged_in = None              # None means "not known yet"
         self.lastReceptionTime = 0
 
-        self.infonumber = 0     # these are new, and only for Charger project?
+        self.infonumber = 0     # the following are new, and only for Charger project?
         self.focccicapeCycleCounter = 0
         self.evseModePowerSupplyTargetVoltage = 0
         self.evseModePowerSupplyTargetCurrent = 0
@@ -592,7 +592,7 @@ class hardwareInterface():
             self.canbus.send(msg)
 
             # send *actual* charger values back to the car via CAN message 0x109 for comparison with requested values during charging loop
-            status = 4 if self.maxChargerVoltage > 0 else 0  # report connector locked
+            status |= self.plugged_in     # always report locked when plugged in (adapter has no lock at present)
             msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
 
@@ -627,16 +627,16 @@ if __name__ == "__main__":
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
             if (i==100):            # EV requests voltage and current via CAN message 0x102
                                     # reflect these values to charger, and hence back to EV via CAN message
-                print("Charger sends back *actual* values to EV")
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVoltage, hw.chargeCurrentRequest)
+                print("Set test Charger Voltage and Current values to send back to EV")
+                hw.setChargerVoltageAndCurrent(375, 0)      # typical HV volts for 80% SOC
             if (i==200):
                 pass
             if (i==500):
                 pass
             if (i==700):            # set EV current demand to zero
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVoltage, 0)
+                hw.setChargerVoltageAndCurrent(375, 0)
             if (i==800):            # set EV current demand to zero
-                hw.setChargerVoltageAndCurrent(hw.targetBatteryVoltage, 0)
+                hw.setChargerVoltageAndCurrent(375, 0)
                 hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
             if (i==900):
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
