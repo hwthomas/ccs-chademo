@@ -356,29 +356,29 @@ class hardwareInterface():
         # The following class variables are for testing the CHAdeMO hardware
 
         # EV tells charger what it *needs* via CAN-ID 0x100
-        self.minChargeCurrent = 0       # CAN-ID 0x100
-        self.minBatteryVoltage = 0
-        self.maxBatteryVoltage = 0
-        self.chargeRateIndication = 100
+        self.minChargeCurrent = None        # CAN-ID 0x100
+        self.minBatteryVoltage = None
+        self.maxBatteryVoltage = None
+        self.chargeRateIndication = None
 
-        self.maxChargeTimeMins = 0      # CAN-ID 0x101
-        self.estChargeTimeMins = 0
-        self.ratedCapacitykWh = 0
+        self.maxChargeTimeMins = None       # CAN-ID 0x101
+        self.estChargeTimeMins = None
+        self.ratedCapacitykWh = None
 
-        self.targetBatteryVoltage = 0   # CAN-ID 0x102 EV requests during charge phase
-        self.chargeCurrentRequest = 0
-        self.evFaultBits = 0
-        self.evStatusBits = 0
-        self.evStateOfCharge = 0
+        self.targetBatteryVoltage = None    # CAN-ID 0x102 EV requests during charge phase
+        self.chargeCurrentRequest = None
+        self.evFaultBits = None
+        self.evStatusBits = None
+        self.evStateOfCharge = None
 
-        self.lastReceptionTime = 0      # records CAN volts & amps requests from EV
+        self.lastReceptionTime = None       # records CAN volts & amps requests from EV
 
         # Charger tells EV the maximum it can supply via CAN-ID 0x108
-        self.maxChargerVoltage = 0      # CAN-ID 0x108 charger sends maxAvailable
-        self.maxChargerCurrent = 2
+        self.maxChargerVoltage = None       # CAN-ID 0x108 charger sends maxAvailable
+        self.maxChargerCurrent = None
 
-        self.chargerVoltage = 0         # CAN-ID 0x109 charger sends actual to EV
-        self.chargerCurrent = 0
+        self.chargerVoltage = None          # CAN-ID 0x109 charger sends actual to EV
+        self.chargerCurrent = None
 
 
         # end of CHAdeMO current variables
@@ -614,7 +614,7 @@ if __name__ == "__main__":
     # create instance of hardwareInterface
     hw = hardwareInterface(myPrintfunction)
     hw.plugged_in = True        # charging session starts
-    hw.setChargerParameters(500, 125)   # set typical EVSE Max (available) volts and amps
+    hw.setChargerParameters(500, 135)   # set typical EVSE Max (available) volts and amps
 
     try:
         # loop 1000 times to give ~30s at ~30mS per scan, and start scanning hardwareInterface.mainfunction each time

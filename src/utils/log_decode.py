@@ -52,27 +52,27 @@ class can_decode():
         # The following class variables are for testing the CHAdeMO hardware
         
         # EV tells charger what it *needs* via CAN-ID 0x100        
-        self.minChargeCurrent = -1          # CAN-ID 0x100
-        self.minBatteryVoltage = -1
-        self.maxBatteryVoltage = -1
-        self.chargeRateIndication = 100
+        self.minChargeCurrent = None        # CAN-ID 0x100
+        self.minBatteryVoltage = None
+        self.maxBatteryVoltage = None
+        self.chargeRateIndication = None
         
-        self.maxChargeTimeMins = -1         # CAN-ID 0x101
-        self.estChargeTimeMins = -1
-        self.ratedCapacitykWh = -1
+        self.maxChargeTimeMins = None       # CAN-ID 0x101
+        self.estChargeTimeMins = None
+        self.ratedCapacitykWh = None
             
-        self.targetBatteryVoltage = -1      # CAN-ID 0x102  EV requests during charge phase
-        self.chargeCurrentRequest = -1
-        self.evFaultBits = -1
-        self.evStatusBits = -1
-        self.evStateOfCharge = -1
+        self.targetBatteryVoltage = None    # CAN-ID 0x102  EV requests during charge phase
+        self.chargeCurrentRequest = None
+        self.evFaultBits = None
+        self.evStatusBits = None
+        self.evStateOfCharge = None
         
         # Charger tells EV the maximum it can supply via CAN-ID 0x108
-        self.maxChargerVoltage = -1         # CAN-ID 0x108  charger sends maxAvailable
-        self.maxChargerCurrent = -1
+        self.maxChargerVoltage = None       # CAN-ID 0x108  charger sends maxAvailable
+        self.maxChargerCurrent = None
         
-        self.chargerVoltage = -1            # CAN-ID 0x109
-        self.chargerCurrent = -1
+        self.chargerVoltage = None          # CAN-ID 0x109
+        self.chargerCurrent = None
 
         # end of CHAdeMO test variables
         
