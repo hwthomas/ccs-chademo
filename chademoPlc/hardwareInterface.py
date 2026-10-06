@@ -537,6 +537,7 @@ class hardwareInterface():
         # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
         #
         if message:
+            # EV sends maximum volts needed from the charger in ID 0x100
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
                 if self.minChargeCurrent != new_value:
@@ -553,11 +554,9 @@ class hardwareInterface():
                     self.addToTrace("CHAdeMO: maxBatteryVoltage = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
-            if message.arbitration_id == 0x101:
-                new_value = int(message.data[5]) + int(message.data[6])*256
-                if(self.ratedCapacitykWh != new_value):
-                    self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
-                    self.ratedCapacitykWh = new_value
+                # send 'available' charger values immediately to the EV via ID-0x108 for validation 
+                msg = can.Message(arbitration_id=0x108, data=[ 0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
+                self.canbus.send(msg)
 
             if message.arbitration_id == 0x102:
                 self.lastReceptionTime = time()     # record CAN volts and current requests
@@ -580,8 +579,6 @@ class hardwareInterface():
                 if(self.evStatusBits != new_value):
                     self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
                     statusChange = new_value ^ self.evStatusBits    # xor new and old to get changes
-                    # TODO
-                    # Evaluate and show individual status bits
                     self.evStatusBits = new_value
 
                 new_value = message.data[6]
@@ -589,16 +586,18 @@ class hardwareInterface():
                     self.addToTrace("CHAdeMO: evStateOfCharge = %d" % new_value)
                     self.evStateOfCharge = new_value
 
-            # send 'available' charger values back to the car via CAN message 0x108 for validation 
-            msg = can.Message(arbitration_id=0x108, data=[ 0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
-            self.canbus.send(msg)
+                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with requested values from ID 0x102
+                status = 4          # also in ID 0x109 'always' report connector locked (adapter has no lock at present)
+                msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+                self.canbus.send(msg)
+                
+            if message.arbitration_id == 0x101:
+                new_value = int(message.data[5]) + int(message.data[6])*256
+                if(self.ratedCapacitykWh != new_value):
+                    self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
+                    self.ratedCapacitykWh = new_value
 
-            # send *actual* charger values back to the car via CAN message 0x109 for comparison with requested values during charging loop
-            status = 4          # *always* report locked (adapter has no lock at present)
-            msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
-            self.canbus.send(msg)
-
-        #if no CAN-ID 0x102 was received for over a second, time out
+        # if no CAN-ID 0x102 (chargeCurrentRequest) was received for over a second, time out and shut charging down
         if self.lastReceptionTime < (time() - 1):
             if self.accuMaxCurrent != 0:
                 self.addToTrace("CHAdeMO: No current limit update for over 1s, setting current to 0")
@@ -619,18 +618,20 @@ if __name__ == "__main__":
     try:
         # loop 1000 times to give ~30s at ~30mS per scan, and start scanning hardwareInterface.mainfunction each time
         for i in range(0, 1000):
-            hw.mainfunction()       # poll hardware interface
+            hw.mainfunction()       # poll hardware interface, updating CAN-bus variables to/from the EV
             if (i==33):             # after ~1s...
                 print("Start EV CAN-bus and inform charger of Maximum Voltage and Current needs")
                 hw.setChargerVoltageAndCurrent(0, 0)      # set HV volts & amps to zero to start
+                print("Activate charge signal d1/SS1 to EV to start CAN-bus comms")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
                                     # the EV's maximum Voltage and Current requirements to the charger
             if (i==99):             # by now (2s after SS1), EV should assert signal 'k' ChargePermit 
                 hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
+                print("Activate charge signal d2/SS2 to EV to enable HV contactors")
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
             if (i==200):            # EV requests voltage and current via CAN message 0x102
                 print("Set test Charger Voltage and Current values to send back to EV")
-                hw.setChargerVoltageAndCurrent(370, 0)      # set typical HV volts for 60% SOC (40% - 70%)
+                hw.setChargerVoltageAndCurrent(370, 2)      # set typical HV volts for 60% SOC (40% - 70%)
                                     # these values are sent hence back to EV via CAN message 0x109
             if (i==500):            # 
                 pass
