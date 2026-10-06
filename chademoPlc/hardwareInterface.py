@@ -200,6 +200,10 @@ class hardwareInterface():
         self.addToTrace("Setting charger *available* maxVoltage=%d V, maxCurrent=%d A" % (maxVoltage, maxCurrent))
         self.maxChargerVoltage = int(maxVoltage)
         self.maxChargerCurrent = int(maxCurrent)
+        # send updated charger values immediately to the EV via ID-0x108
+        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
+        self.canbus.send(msg)
+
 
     def setChargerVoltageAndCurrent(self, voltageNow, currentNow):
         self.addToTrace("Setting charger *actual* values Voltage=%d V, Current=%d A" % (voltageNow, currentNow))
@@ -555,7 +559,7 @@ class hardwareInterface():
                     self.maxBatteryVoltage = new_value
 
                 # send 'available' charger values immediately to the EV via ID-0x108 for validation 
-                msg = can.Message(arbitration_id=0x108, data=[ 0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
+                msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
                 self.canbus.send(msg)
 
             if message.arbitration_id == 0x102:
@@ -578,7 +582,6 @@ class hardwareInterface():
                 new_value = message.data[5]
                 if(self.evStatusBits != new_value):
                     self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
-                    statusChange = new_value ^ self.evStatusBits    # xor new and old to get changes
                     self.evStatusBits = new_value
 
                 new_value = message.data[6]
@@ -588,7 +591,7 @@ class hardwareInterface():
 
                 #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with requested values from ID 0x102
                 status = 4          # also in ID 0x109 'always' report connector locked (adapter has no lock at present)
-                msg = can.Message(arbitration_id=0x109, data=[ 0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+                msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
                 self.canbus.send(msg)
                 
             if message.arbitration_id == 0x101:
@@ -624,6 +627,7 @@ if __name__ == "__main__":
                 hw.setChargerVoltageAndCurrent(0, 0)      # set HV volts & amps to zero to start
                 print("Activate charge signal d1/SS1 to EV to start CAN-bus comms")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
+                hw.setChargerParameters(500, 135)   # set typical EVSE Max (available) volts and amps
                                     # the EV's maximum Voltage and Current requirements to the charger
             if (i==99):             # by now (2s after SS1), EV should assert signal 'k' ChargePermit 
                 hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
