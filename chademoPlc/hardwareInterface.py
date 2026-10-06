@@ -371,7 +371,7 @@ class hardwareInterface():
         self.evStatusBits = None
         self.evStateOfCharge = None
 
-        self.lastReceptionTime = None       # records CAN volts & amps requests from EV
+        self.lastReceptionTime = 0.0        # records CAN volts & amps requests from EV
 
         # Charger tells EV the maximum it can supply via CAN-ID 0x108
         self.maxChargerVoltage = None       # CAN-ID 0x108 charger sends maxAvailable
