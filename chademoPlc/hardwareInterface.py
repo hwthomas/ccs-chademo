@@ -200,10 +200,6 @@ class hardwareInterface():
         self.addToTrace("Setting charger *available* maxVoltage=%d V, maxCurrent=%d A" % (maxVoltage, maxCurrent))
         self.maxChargerVoltage = int(maxVoltage)
         self.maxChargerCurrent = int(maxCurrent)
-        # send updated charger values immediately to the EV via ID-0x108
-        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
-        self.canbus.send(msg)
-
 
     def setChargerVoltageAndCurrent(self, voltageNow, currentNow):
         self.addToTrace("Setting charger *actual* values Voltage=%d V, Current=%d A" % (voltageNow, currentNow))
@@ -359,11 +355,11 @@ class hardwareInterface():
 
         # The following class variables are for testing the CHAdeMO hardware
 
-        # EV tells charger what it *needs* via CAN-ID 0x100
+        # EV tells charger what it *needs* via CAN-ID 0x100. 
         self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None
         self.maxBatteryVoltage = None
-        self.chargeRateIndication = None
+        self.chargeRateIndication = None    # None means 'not known yet'
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
@@ -381,7 +377,7 @@ class hardwareInterface():
         self.maxChargerVoltage = None       # CAN-ID 0x108 charger sends maxAvailable
         self.maxChargerCurrent = None
 
-        self.chargerVoltage = None          # CAN-ID 0x109 charger sends actual to EV
+        self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to EV
         self.chargerCurrent = None
 
 
@@ -558,8 +554,13 @@ class hardwareInterface():
                     self.addToTrace("CHAdeMO: maxBatteryVoltage = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
-                # send 'available' charger values immediately to the EV via ID-0x108 for validation 
+                # send 'available' charger values immediately to the EV via ID 0x108 for validation 
                 msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
+                self.canbus.send(msg)
+
+                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with request in ID 0x102
+                status = 4          # also in ID 0x109 'always' report connector locked (adapter has no lock at present)
+                msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
                 self.canbus.send(msg)
 
             if message.arbitration_id == 0x102:
@@ -589,11 +590,6 @@ class hardwareInterface():
                     self.addToTrace("CHAdeMO: evStateOfCharge = %d" % new_value)
                     self.evStateOfCharge = new_value
 
-                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with requested values from ID 0x102
-                status = 4          # also in ID 0x109 'always' report connector locked (adapter has no lock at present)
-                msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
-                self.canbus.send(msg)
-                
             if message.arbitration_id == 0x101:
                 new_value = int(message.data[5]) + int(message.data[6])*256
                 if(self.ratedCapacitykWh != new_value):
@@ -616,7 +612,7 @@ if __name__ == "__main__":
     # create instance of hardwareInterface
     hw = hardwareInterface(myPrintfunction)
     hw.plugged_in = True        # charging session starts
-    hw.setChargerParameters(500, 135)   # set typical EVSE Max (available) volts and amps
+    hw.setChargerParameters(500, 135)   # set up typical EVSE Max (available) volts and amps
 
     try:
         # loop 1000 times to give ~30s at ~30mS per scan, and start scanning hardwareInterface.mainfunction each time
