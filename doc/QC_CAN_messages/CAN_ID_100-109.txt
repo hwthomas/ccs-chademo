@@ -25,7 +25,7 @@ name                            bitPos  bits    byteOrder   byte    factor  rang
 maxChargingTime10sBit           8       8       Intel       [1]     10      0|2540      secs
 maxChargingTime1minBit          16      8       Intel       [2]     1       0|255       mins
 estimatedChargingTime           24      8       Intel       [3]     1       0|254       mins
-ratedBatteryCapacity            32      16      Intel       [5,6]   0.11    0|100       kWh
+ratedBatteryCapacity            40      16      Intel       [5,6]   0.1     0|100       kWh
 
 code
 ~~~~
@@ -50,12 +50,12 @@ highBatteryTemperature          35      1
 batteryVoltageDeviation         36      1
 
 statusBits for vehicle          40      8       Intel       [5]     1       0|255       0/1
-evReadyToCharge                 40      1
-evNotInPark                     41      1
-evCHAdeMoVersion                42      1
-evContactorOpen                 43      1
-evNormalStopRequest             44      1
-
+evReadyToCharge                 40      1  0x01
+evNotInPark                     41      1  0x02
+evCHAdeMoVersion                42      1  0x04
+evContactorOpen                 43      1  0x08
+evNormalStopRequest             44      1  0x10
+evV2XCompatible                 47      1  0x80
 evStateOfChargeSOC              48      8       Intel       [6]     1       0|100       %
 
 
