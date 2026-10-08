@@ -35,12 +35,11 @@ try:
         
         # format timestamp, ID, and dlc first
         c = "{0:f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
-        # then format the data bytes with single space separator
-        s=''
+        # then append the data bytes with single space separator
         for i in range(message.dlc ):
-            s +=  "{0:02X} ".format(message.data[i])
+            c +=  "{0:02X} ".format(message.data[i])
 
-        print(" {}".format(c+s))    # space separator between fields of each line in log
+        print(" {}".format(c))    # space separator between fields of each line in log
     
         # pause 10mS, then loop for next message or until Ctrl-C
         time.sleep(0.01) 
