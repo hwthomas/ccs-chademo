@@ -42,7 +42,9 @@ if (getConfigValue("charge_parameter_backend")=="chademo"):
     filters = [
        {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
+       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False},
+       {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
+       {"can_id": 0x109, "can_mask": 0x7FF, "extended": False}]
     try:
         canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
     except OSError:
