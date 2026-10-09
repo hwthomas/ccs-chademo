@@ -2,7 +2,7 @@
 # This hardware interface has been set up to use *only* the CHAdeMO interface, as required by the
 # Waveshare Raspberry Pi4 HAT RS485/CAN board.  It also uses the RPi.GPIO interface digital I/O.
 # 
-
+#!!!!!!!!!!!!!!!!!  edit in progress  !!!!!!!!!!!!!!!!!
 from pyPlcModes import *
 from time import sleep, time
 from configmodule import getConfigValue, getConfigValueBool
@@ -353,34 +353,37 @@ class hardwareInterface():
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
 
-        self.evChargePermit = 0             # input of signal_k (LOW) via GPIO
+        self.evChargePermit = 0             # input of signal_k (active LOW) via GPIO
 
-        # The following class variables are for testing the CHAdeMO hardware
+        # The following class variables are for comms to/from the CHAdeMO EV
 
-        # EV tells charger what it *needs* via CAN-ID 0x100. 
-        self.minChargeCurrent = None        # CAN-ID 0x100
-        self.minBatteryVoltage = None
+        # the EV tells the charger the maximum volts & amps it 'needs' via CAN-ID 0x100
+         
+        self.minChargeCurrent = None        # CAN-ID 0x100 - None means 'not known yet'
+        self.minBatteryVoltage = None       
         self.maxBatteryVoltage = None
-        self.chargeRateIndication = None    # None means 'not known yet'
+        self.chargeRateIndication = None
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
 
-        self.targetBatteryVoltage = None    # CAN-ID 0x102 EV requests during charge phase
+        self.targetBatteryVoltage = None    # CAN-ID 0x102 EV sends requests in charging loop
         self.chargeCurrentRequest = None
         self.evFaultBits = None
         self.evStatusBits = None
         self.evStateOfCharge = None
 
-        self.lastReceptionTime = 0.0        # records CAN volts & amps requests from EV
+        self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
-        # Charger tells EV the maximum it can supply via CAN-ID 0x108
-        self.maxChargerVoltage = None       # CAN-ID 0x108 charger sends maxAvailable
+        # Charger tells EV the maximum volts and amps it can supply
+        
+        self.maxChargerVoltage = None       # CAN-ID 0x108 - charger sends maxAvailable values
         self.maxChargerCurrent = None
+        self.thresholdVoltage = None        # this is the maximum for protection of the EV
 
-        self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to EV
-        self.chargerCurrent = None
+        self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to the EV in 
+        self.chargerCurrent = None          # response to EV requests during the charging loop
 
 
         # end of CHAdeMO current variables
@@ -556,11 +559,14 @@ class hardwareInterface():
                     self.addToTrace("CHAdeMO: maxBatteryVoltage = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
-                # send 'available' charger values immediately to the EV via ID 0x108 for validation 
-                msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, 0, 0, 0, 0], is_extended_id=False)
+                # send 'available' charger values immediately to the EV via ID 0x108 for validation
+                self.thresholdVoltage = min(self.maxBatteryVoltage, self.maxChargerVoltage)     # minimum of what EV 'needs' and charger can supply
+                th_lo = self.thresholdVoltage & 0xFF
+                th_hi = self.thresholdVoltage >> 8
+                msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
                 self.canbus.send(msg)
 
-                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with request in ID 0x102
+                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with EV request in ID 0x102
                 status = 4          # also in ID 0x109 'always' report connector locked (adapter has no lock at present)
                 msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
                 self.canbus.send(msg)
@@ -593,6 +599,11 @@ class hardwareInterface():
                     self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x101:
+                new_value = message.data[3]
+                if(self.estChargeTimeMins != new_value):
+                    self.addToTrace("CHAdeMO: estimated charge time = %d mins" % new_value)
+                    self.estChargeTimeMins = new_value
+                    
                 new_value = int(message.data[5]) + int(message.data[6])*256
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)

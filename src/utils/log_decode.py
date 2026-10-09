@@ -21,6 +21,7 @@
 import can      # for message structure  
 import time     # for sleep and timings
 import sys
+import numpy as np  # for fast array comparisons if required
 
 from configmodule import getConfigValue, getConfigValueBool
 
@@ -37,6 +38,14 @@ class can_decode():
 
     def showStatus(s, selection=""):
         pass
+        
+    def format_data(self, data):
+        dlc = 8     # always 8 data bytes
+        c = "{0:02X} ".format(dlc)
+        # append data bytes with single space separator
+        for i in range(0,7):
+            c +=  "{0:02X} ".format(data[i])
+        return c
     
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None):
         self.callbackAddToTrace = callbackAddToTrace
@@ -49,9 +58,9 @@ class can_decode():
         # so it stays right at the top of __init__.
         self.traceEnabled = getConfigValueBool("evse_printtrace")
        
-        # The following class variables are for testing the CHAdeMO hardware
+        # The following class variables are for comms to & from the CHAdeMO EV
         
-        # EV tells charger the maximum amps, volts it needs via CAN-ID 0x100        
+        # the EV tells charger the maximum volts & amps it needs via CAN-ID 0x100        
         self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None
         self.maxBatteryVoltage = None
@@ -67,13 +76,15 @@ class can_decode():
         self.evStatusBits = None
         self.evStateOfCharge = None
         
-        # Charger tells EV the maximum it can supply via CAN-ID 0x108
-        self.maxChargerVoltage = None       # CAN-ID 0x108  charger sends maxAvailable
-        self.maxChargerCurrent = None
+        # Charger tells EV the maximum volts and amps it can supply
 
-        # and the actual values during the charge phase
-        self.chargerVoltage = None          # CAN-ID 0x109
-        self.chargerCurrent = None
+        self.data_0x108 = None              # CAN-ID 0x108 - charger sends maxAvailable values
+        self.maxChargerVoltage = None
+        self.maxChargerCurrent = None
+        self.thresholdVoltage = None        # maximum threshold voltage for EV protection
+
+        self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to the EV in 
+        self.chargerCurrent = None          # response to EV requests during the charging loop
 
         # end of CHAdeMO test variables
         
@@ -85,7 +96,7 @@ class can_decode():
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
         # These dbc files were updated (June 2026) & all 16-bit values are now Intel format, and
         # multiplication factor changed from 0,01 to 1
-        # Only report when values change from the previous one
+        # Only report when message data values change from the previous ones
        
         if message:
             if message.arbitration_id == 0x100:
@@ -105,11 +116,11 @@ class can_decode():
                     self.maxBatteryVoltage = new_value
 
             if message.arbitration_id == 0x101:
-                new_value = (message.data[1]) * 10/60
-                if(self.maxChargeTimeMins != new_value):
-                    self.addToTrace("ID 0x101: maxChargeTimeMins = %d mins" % new_value)
-                    self.maxChargeTime = new_value
-
+                new_value = message.data[3]
+                if(self.estChargeTimeMins != new_value):
+                    self.addToTrace("CHAdeMO: estimated charge time = %d mins" % new_value)
+                    self.estChargeTimeMins = new_value
+                    
                 new_value = int(message.data[5]) + int(message.data[6])*256
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("ID 0x101: ratedCapacity = %d kWh" % new_value)
@@ -152,6 +163,11 @@ class can_decode():
                     self.addToTrace("ID 0x108: maxChargerCurrent = %d A" % new_value)
                     self.maxChargerCurrent = new_value
 
+                new_value = int(message.data[4]) + int(message.data[5])*256
+                if(self.thresholdVoltage != new_value):
+                    self.addToTrace("ID 0x108: ThresholdVoltage = %d V" % new_value)
+                    self.thresholdVoltage = new_value
+
             if message.arbitration_id == 0x109:
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
@@ -167,7 +183,6 @@ class can_decode():
         pass
     
 pass    # end of can_decode class
-
 
 # These logging and status functions used as defaults when can_decode class instance created
 
