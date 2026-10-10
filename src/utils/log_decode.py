@@ -39,7 +39,7 @@ class can_decode():
     def showStatus(s, selection=""):
         pass
         
-    def format_data(self, data):
+    def format_data(self, data):    # format the data bytes of a CAN message
         dlc = 8     # always 8 data bytes
         c = "{0:02X} ".format(dlc)
         # append data bytes with single space separator
@@ -78,8 +78,7 @@ class can_decode():
         
         # Charger tells EV the maximum volts and amps it can supply
 
-        self.data_0x108 = None              # CAN-ID 0x108 - charger sends maxAvailable values
-        self.maxChargerVoltage = None
+        self.maxChargerVoltage = None       # CAN-ID 0x108 - charger sends maxAvailable values
         self.maxChargerCurrent = None
         self.thresholdVoltage = None        # maximum threshold voltage for EV protection
 
