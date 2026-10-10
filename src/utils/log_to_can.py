@@ -42,7 +42,7 @@ if __name__ == "__main__":
     with open(can_file) as file:
         startTime_ms = round(time.time()*1000)
         for line in file:                   # iterate through each line in the file
-            time.sleep(0.02)                # wait 20mS before next message
+            time.sleep(0.05)                # wait 50mS before next message
             currentTime_ms = round(time.time()*1000)
 
             items = line.split(',')         # <list> of comma separated <str>
@@ -54,19 +54,21 @@ if __name__ == "__main__":
                 data[i-6] = int(items[i], 16)   # convert items to hex integers
 
             msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
-            # print(msg)
+            # print(msg)    # debug only
 
             try:
                 bus.send(msg)
             except can.CanError:
                 print("Message NOT sent")
+                continue
             except KeyboardInterrupt:
                 print("Ctrl-C typed to exit program")
-                bus.shutdown()
-                os.system("sudo /sbin/ip link set can0 down")
                 break
+        pass    # end of for loop
+                
         print("All lines in log sent - log file closed")
-        bus.shutdown()
-        os.system("sudo /sbin/ip link set can0 down")
     pass     # can_file gets closed at end of with...
+    bus.shutdown()
+    os.system("sudo /sbin/ip link set can0 down")
+
 
