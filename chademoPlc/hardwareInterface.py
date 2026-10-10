@@ -626,36 +626,30 @@ if __name__ == "__main__":
     hw = hardwareInterface(myPrintfunction)
     hw.plugged_in = True        # charging session starts
     hw.setChargerParameters(500, 135)   # set up typical EVSE Max (available) volts and amps
-
+    hw.setChargerVoltageAndCurrent(0, 0)      # set HV volts & amps to zero to start
     try:
-        # loop 1000 times to give ~30s at ~30mS per scan, and start scanning hardwareInterface.mainfunction each time
-        for i in range(0, 1000):
-            hw.mainfunction()       # poll hardware interface, updating CAN-bus variables to/from the EV
-            if (i==33):             # after ~1s...
+        for i in range(0, 300):     # loop for ~10s at 30mS per scan
+            hw.mainfunction()       # poll hardware interface, updating CAN-bus variables to/from the EV on each scan
+            if (i==30):             # after ~1s...
                 print("Start EV CAN-bus and inform charger of Maximum Voltage and Current needs")
-                hw.setChargerVoltageAndCurrent(0, 0)      # set HV volts & amps to zero to start
                 print("Activate charge signal d1/SS1 to EV to start CAN-bus comms")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
-                hw.setChargerParameters(500, 135)   # set typical EVSE Max (available) volts and amps
                                     # the EV's maximum Voltage and Current requirements to the charger
-            if (i==99):             # by now (2s after SS1), EV should assert signal 'k' ChargePermit 
-                hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
+            if (i==120):            # by now (~3s after SS1), EV should assert signal 'k' ChargePermit 
                 print("Activate charge signal d2/SS2 to EV to enable HV contactors")
+                hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
             if (i==200):            # EV requests voltage and current via CAN message 0x102
                 print("Set test Charger Voltage and Current values to send back to EV")
                 hw.setChargerVoltageAndCurrent(370, 2)      # set typical HV volts for 60% SOC (40% - 70%)
                                     # these values are sent hence back to EV via CAN message 0x109
-            if (i==500):            # 
-                pass
-            if (i==700):            # set EV current demand to zero
+            if (i==260):            # set EV current demand to zero 
                 print("Set test Charger Current request to zero")
                 hw.setChargerVoltageAndCurrent(375, 0)
-            if (i==800):            # set EV current demand to zero
-                hw.setChargerVoltageAndCurrent(375, 0)
                 hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
-            if (i==900):
+            if (i==300):            # set EV current demand to zero
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
+
             sleep(0.03)             # wait for approx. scan time
 
     except KeyboardInterrupt:       # ctrl-C quits if all else fails!
