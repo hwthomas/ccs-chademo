@@ -2,7 +2,6 @@
 # This hardware interface has been set up to use *only* the CHAdeMO interface, as required by the
 # Waveshare Raspberry Pi4 HAT RS485/CAN board.  It also uses the RPi.GPIO interface digital I/O.
 # 
-#!!!!!!!!!!!!!!!!!  edit in progress  !!!!!!!!!!!!!!!!!
 from pyPlcModes import *
 from time import sleep, time
 from configmodule import getConfigValue, getConfigValueBool
@@ -617,13 +616,18 @@ class hardwareInterface():
 
 pass    # end of class hardwareInterface
 
-def myPrintfunction(s):
-    print("myprint " + s)
+# This specific 'addToTrace' function used when hardwareInterface (test) class instance is created
+startTime_ms = round(time.time()*1000)
+
+def hwAddToTrace(s):
+    currentTime_ms = round(time.time()*1000)
+    dT_ms = currentTime_ms - startTime_ms
+    print("[" + str(dT_ms) + "ms] " + s)
 
 if __name__ == "__main__":
     print("Testing hardwareInterface for ~30s...")
     # create instance of hardwareInterface
-    hw = hardwareInterface(myPrintfunction)
+    hw = hardwareInterface(hwAddToTrace)
     hw.plugged_in = True        # charging session starts
     hw.setChargerParameters(500, 135)   # set up typical EVSE Max (available) volts and amps
     hw.setChargerVoltageAndCurrent(0, 0)      # set HV volts & amps to zero to start
