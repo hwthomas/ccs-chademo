@@ -617,10 +617,10 @@ class hardwareInterface():
 pass    # end of class hardwareInterface
 
 # This specific 'addToTrace' function used when hardwareInterface (test) class instance is created
-startTime_ms = round(time.time()*1000)
+startTime_ms = round(time()*1000)
 
 def hwAddToTrace(s):
-    currentTime_ms = round(time.time()*1000)
+    currentTime_ms = round(time()*1000)
     dT_ms = currentTime_ms - startTime_ms
     print("[" + str(dT_ms) + "ms] " + s)
 
