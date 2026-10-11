@@ -41,7 +41,9 @@ if (getConfigValue("charge_parameter_backend")=="chademo"):
     filters = [
        {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False} ]
+       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}
+       {"can_id": 0x108, "can_mask": 0x7FF, "extended": False}
+       {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
     try:
         canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
     except OSError:
@@ -557,10 +559,7 @@ class hardwareInterface():
                     self.maxBatteryVoltage = new_value
 
                 # send 'available' charger values immediately to the EV via ID 0x108 for validation
-                self.addToTrace("0x108: maxChargerVoltage = %d" % self.maxChargerVoltage)
-                self.addToTrace("0x108: maxChargerCurrent = %d" % self.maxChargerCurrent)
                 self.thresholdVoltage = min(self.maxBatteryVoltage, self.maxChargerVoltage)     # minimum of what EV 'needs' and what charger can supply
-                self.addToTrace("0x108: thresholdVoltage = %d" % self.thresholdVoltage)
                 th_lo = self.thresholdVoltage & 0xFF
                 th_hi = self.thresholdVoltage >> 8
                 msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
@@ -572,7 +571,7 @@ class hardwareInterface():
                 self.canbus.send(msg)
 
             if message.arbitration_id == 0x102:
-                self.lastReceptionTime = time()     # record CAN volts and current requests
+                self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("0x102 targetBatteryVoltage = %d V" % new_value)
@@ -608,6 +607,33 @@ class hardwareInterface():
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("0x101 ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
+
+            if message.arbitration_id == 0x108:
+                new_value = int(message.data[1]) + int(message.data[2])*256
+                if(self.maxChargerVoltage != new_value):
+                    self.addToTrace("ID 0x108: maxChargerVoltage = %d V" % new_value)
+                    self.maxChargerVoltage = new_value
+                    
+                new_value = message.data[3]
+                if(self.maxChargerCurrent != new_value):
+                    self.addToTrace("ID 0x108: maxChargerCurrent = %d A" % new_value)
+                    self.maxChargerCurrent = new_value
+
+                new_value = int(message.data[4]) + int(message.data[5])*256
+                if(self.thresholdVoltage != new_value):
+                    self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
+                    self.thresholdVoltage = new_value
+
+            if message.arbitration_id == 0x109:
+                new_value = int(message.data[1]) + int(message.data[2])*256
+                if(self.chargerVoltage != new_value):
+                    self.addToTrace("ID 0x109: actual charger Voltage = %d V" % new_value)
+                    self.chargerVoltage = new_value
+
+                new_value = message.data[3]
+                if(self.chargerCurrent != new_value):
+                    self.addToTrace("ID 0x109: actual charger Current = %d A" % new_value)
+                    self.chargerCurrent = new_value
 
         # if no CAN-ID 0x102 (chargeCurrentRequest) was received for over a second, time out and shut charging down
         if self.lastReceptionTime < (time() - 1):
