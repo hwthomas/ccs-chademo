@@ -205,7 +205,7 @@ class hardwareInterface():
             self.addToTrace("Setting charger 'available Current = %d A" % maxCurrent)
             self.maxChargerCurrent = int(maxCurrent)
         # construct CAN message 0x108 and send it
-        self.thresholdVoltage = min(self.maxBatteryVoltage, self.maxChargerVoltage)     # minimum of what EV 'needs' and what charger can supply
+        self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
         th_lo = self.thresholdVoltage & 0xFF
         th_hi = self.thresholdVoltage >> 8
         msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
