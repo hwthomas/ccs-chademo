@@ -64,7 +64,7 @@ class can_decode():
         self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None
         self.maxBatteryVoltage = None
-        self.chargeRateIndication = None
+        self.socPercentFactor = None
         
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
@@ -114,13 +114,23 @@ class can_decode():
                     self.addToTrace("ID 0x100: maxBatteryVolts = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
+                new_value = message.data[6]
+                if(self.socPercentFactor != new_value):
+                    self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                    self.socPercentFactor = new_value
+
             if message.arbitration_id == 0x101:
+                new_value = message.data[2]
+                if(self.maxChargeTimeMins != new_value):
+                    self.addToTrace("0x101 maximum charge time = %d mins" % new_value)
+                    self.maxChargeTimeMins = new_value
+
                 new_value = message.data[3]
                 if(self.estChargeTimeMins != new_value):
                     self.addToTrace("CHAdeMO: estimated charge time = %d mins" % new_value)
                     self.estChargeTimeMins = new_value
                     
-                new_value = int(message.data[5]) + int(message.data[6])*256
+                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("ID 0x101: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
@@ -164,7 +174,7 @@ class can_decode():
 
                 new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.thresholdVoltage != new_value):
-                    self.addToTrace("ID 0x108: ThresholdVoltage = %d V" % new_value)
+                    self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
                     self.thresholdVoltage = new_value
 
             if message.arbitration_id == 0x109:
