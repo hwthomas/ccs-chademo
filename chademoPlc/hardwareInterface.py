@@ -673,8 +673,8 @@ if __name__ == "__main__":
 
     # create instance of hardwareInterface
     hw = hardwareInterface(hwAddToTrace)
-    
-    volts_out = hw.targetBatteryVoltage     # start simulated charger volt_out with targetVoltage (from 0x102)
+    hw.mainfunction()       # poll hardware interface once, updating CAN-bus variables from the EV on first scan
+    volts_out = hw.targetBatteryVoltage     # start simulated charger volts_out with targetVoltage (from 0x102)
     amps_out = hw.chargeCurrentRequest      # ditto for amps_out. These will have been updated on first scan
     
     def simulateChargerResponse():
