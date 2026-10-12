@@ -195,19 +195,29 @@ class hardwareInterface():
             pass    #    return self.lock_confirmed
         return 1 # todo: use the real connector lock feedback
 
-    # These two functions are only called from the test routine __main__ at the end
+    # The next two functions are only called by the CAN-bus update in mainfunction_chademo, and by the test routine __main__ 
     def setChargerParameters(self, maxVoltage, maxCurrent):
         self.addToTrace("Setting charger 'available Voltage = %d V" % maxVoltage)
         self.maxChargerVoltage = int(maxVoltage)
-        self.addToTrace("Setting charger 'available Current = %d V" % maxCurrent)
+        self.addToTrace("Setting charger 'available Current = %d A" % maxCurrent)
         self.maxChargerCurrent = int(maxCurrent)
+        # construct CAN message 0x108 and send it
+        self.thresholdVoltage = min(self.maxBatteryVoltage, self.maxChargerVoltage)     # minimum of what EV 'needs' and what charger can supply
+        th_lo = self.thresholdVoltage & 0xFF
+        th_hi = self.thresholdVoltage >> 8
+        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        self.canbus.send(msg)
 
     def setChargerVoltageAndCurrent(self, voltageNow, currentNow):
         self.addToTrace("Setting charger 'actual' Voltage = %d V" % voltageNow)
         self.chargerVoltage = int(voltageNow)
         self.addToTrace("Setting charger 'actual' Current = %d V" % currentNow)
         self.chargerCurrent = int(currentNow)
-
+        # construct CAN message 0x109 and send it
+        status = 4    # always report connector locked (adapter has no lock at present)
+        msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        self.canbus.send(msg)
+        
     def setPowerSupplyVoltageAndCurrent(self, targetVoltage, targetCurrent, strMode):
         # if we are the charger, and have a real power supply which we want to control, we do it here
         # self.homeplughandler.sendSpecialMessageToControlThePowerSupply(targetVoltage, targetCurrent)
@@ -533,7 +543,8 @@ class hardwareInterface():
                 sys.exit(0)
 
     def mainfunction_chademo(self):
-        self.readEVchargePermit()       # poll EVchargePermit input (signal k) on each scan
+        # GPIO and CAN-bus updates
+        self.readEVchargePermit()       # poll EVchargePermit GPIO input (signal k) on each scan
         message = self.canbus.recv(0)   # non-blocking check for (any) CAN-bus message
         #
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
@@ -564,17 +575,8 @@ class hardwareInterface():
                     self.addToTrace("0x100 socPercentFactor = %d " % new_value)
                     self.socPercentFactor = new_value
 
-                # send 'available' charger values immediately to the EV via ID 0x108 for validation
-                self.thresholdVoltage = min(self.maxBatteryVoltage, self.maxChargerVoltage)     # minimum of what EV 'needs' and what charger can supply
-                th_lo = self.thresholdVoltage & 0xFF
-                th_hi = self.thresholdVoltage >> 8
-                msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
-                self.canbus.send(msg)
-
-                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with EV request in ID 0x102
-                status = 4          # also in ID 0x109 'always' report connector locked (adapter has no lock at present)
-                msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
-                self.canbus.send(msg)
+                # set 'available' charger values and send to the EV via ID 0x108 for validation
+                self.setChargerParameters(self.maxBatteryVoltage, self.maxChargerCurrent) 
 
             if message.arbitration_id == 0x102:
                 self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
@@ -602,6 +604,9 @@ class hardwareInterface():
                 if(self.evStateOfCharge != new_value):
                     self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
                     self.evStateOfCharge = new_value
+
+                #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with EV request in ID 0x102
+                self.setChargerVoltageAndCurrent(self.chargerVoltage, self.chargerCurrent)
 
             if message.arbitration_id == 0x101:
                 new_value = message.data[2]
@@ -664,6 +669,22 @@ def hwAddToTrace(s):
 
 if __name__ == "__main__":
     print("Testing hardwareInterface for ~20s...")
+    
+    volts_out = hw.targetBatteryVoltage     # start simulated charger volt_out with targetVoltage (from 0x102)
+    amps_out = hw.chargeCurrentRequest      # ditto for amps_out. These will have been updated on first scan
+    
+    def simulateChargerResponse():
+        # this filters the EV Current and Voltage requests with a simple first-order filter, and sends the 
+        # outputs back to the EV via CAN. Requests are read from CAN-ID 0x102, targetBatteryVoltage and
+        # chargeCurrentRequest, and updates CAN-ID 0x109, outputVoltage and outputCurrent.  By calling the
+        # function hw.setChargerVoltageAndCurrent, a CAN message is automatically sent via CAN-ID 0x109
+        
+        # filter the volts & amps requests. These will have been updated by the first scan of hw.mainfunction()
+        volts_out = volts_out * 0.8 + hw.targetBatteryVoltage * 0.2
+        amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
+        # now update the EV with these filtered values
+        hw.setChargerVoltageAndCurrent(volts_out, amps_out)
+        
     # create instance of hardwareInterface
     hw = hardwareInterface(hwAddToTrace)
     hw.plugged_in = True        # charging session starts
