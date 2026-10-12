@@ -41,9 +41,7 @@ if (getConfigValue("charge_parameter_backend")=="chademo"):
     filters = [
        {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
+       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False} ]
     try:
         canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
     except OSError:
@@ -314,7 +312,7 @@ class hardwareInterface():
         self.traceEnabled = getConfigValueBool("evse_printtrace")
 
         # ditto for the CHAdeMO backend, which is checked many times on each scan
-        # NB: only use this class variable short-form after class has been created
+        # NB: only use this class variable after class has been created
         if (getConfigValue("charge_parameter_backend")=="chademo"):
             self.chademo_backend = True
         
@@ -352,7 +350,7 @@ class hardwareInterface():
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
 
-        self.evChargePermit = 0             # input of signal_k (active LOW) via GPIO
+        self.evChargePermit = None      # input of signal_k (active LOW) via GPIO
 
         # The following class variables are for comms to/from the CHAdeMO EV
 
@@ -361,7 +359,7 @@ class hardwareInterface():
         self.minChargeCurrent = None        # CAN-ID 0x100 - None means 'not known yet'
         self.minBatteryVoltage = None       
         self.maxBatteryVoltage = None
-        self.chargeRateIndication = None
+        self.socPercentFactor = None
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
@@ -375,14 +373,14 @@ class hardwareInterface():
 
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
-        # Charger tells EV the maximum volts and amps it can supply
+        # Charger tells EV the maximum volts and amps available (ie that it can supply) via 0x108
         
         self.maxChargerVoltage = None       # CAN-ID 0x108 - charger sends maxAvailable values
         self.maxChargerCurrent = None
         self.thresholdVoltage = None        # this is the maximum for protection of the EV
 
-        self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to the EV in 
-        self.chargerCurrent = None          # response to EV requests during the charging loop
+        self.chargerVoltage = None          # CAN-ID 0x109 - charger sends 'actual' volts/amps to the 
+        self.chargerCurrent = None          # EV in response to 0x102 requests during the charging loop
 
 
         # end of CHAdeMO current variables
@@ -558,6 +556,11 @@ class hardwareInterface():
                     self.addToTrace("0x100 maxBatteryVoltage = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
+                new_value = message.data[6]
+                if(self.socPercentFactor != new_value):
+                    self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                    self.socPercentFactor = new_value
+
                 # send 'available' charger values immediately to the EV via ID 0x108 for validation
                 self.thresholdVoltage = min(self.maxBatteryVoltage, self.maxChargerVoltage)     # minimum of what EV 'needs' and what charger can supply
                 th_lo = self.thresholdVoltage & 0xFF
@@ -598,12 +601,17 @@ class hardwareInterface():
                     self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x101:
+                new_value = message.data[2]
+                if(self.maxChargeTimeMins != new_value):
+                    self.addToTrace("0x101 maximum charge time = %d mins" % new_value)
+                    self.maxChargeTimeMins = new_value
+
                 new_value = message.data[3]
                 if(self.estChargeTimeMins != new_value):
                     self.addToTrace("0x101 estimated charge time = %d mins" % new_value)
                     self.estChargeTimeMins = new_value
                     
-                new_value = int(message.data[5]) + int(message.data[6])*256
+                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("0x101 ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
@@ -652,14 +660,14 @@ def hwAddToTrace(s):
     print("[" + str(dT_ms) + "ms] " + s)
 
 if __name__ == "__main__":
-    print("Testing hardwareInterface for ~30s...")
+    print("Testing hardwareInterface for ~20s...")
     # create instance of hardwareInterface
     hw = hardwareInterface(hwAddToTrace)
     hw.plugged_in = True        # charging session starts
     hw.setChargerParameters(500, 135)   # set up typical EVSE Max (available) volts and amps
     hw.setChargerVoltageAndCurrent(0, 0)      # set HV volts & amps to zero to start
     try:
-        for i in range(0, 300):     # loop for ~10s at 30mS per scan
+        for i in range(0, 600):     # loop for ~20s at 30mS per scan
             hw.mainfunction()       # poll hardware interface, updating CAN-bus variables to/from the EV on each scan
             if (i==30):             # after ~1s...
                 print("Start EV CAN-bus and inform charger of Maximum Voltage and Current needs")
@@ -674,11 +682,11 @@ if __name__ == "__main__":
                 print("Set test Charger Voltage and Current values to send back to EV")
                 hw.setChargerVoltageAndCurrent(370, 2)      # set typical HV volts for 60% SOC (40% - 70%)
                                     # these values are sent hence back to EV via CAN message 0x109
-            if (i==260):            # set EV current demand to zero 
+            if (i==400):            # set EV current demand to zero 
                 print("Set test Charger Current request to zero")
                 hw.setChargerVoltageAndCurrent(375, 0)
                 hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
-            if (i==300):            # set EV current demand to zero
+            if (i==500):            # set EV current demand to zero
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
 
             sleep(0.03)             # wait for approx. scan time

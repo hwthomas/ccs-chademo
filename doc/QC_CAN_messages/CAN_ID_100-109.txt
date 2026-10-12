@@ -32,7 +32,7 @@ code
 maxChargingTime10sBit = data[1]*10
 maxChargingTimeMins = data[2]
 estimatedChargingTimeMins = data[3]
-ratedBatteryCapacity = (data[5] + data[6]<<8)*0.11
+ratedBatteryCapacity = (data[5] + data[6]<<8)*0.1
 
 
 CAN Id 0x102    14 vars
