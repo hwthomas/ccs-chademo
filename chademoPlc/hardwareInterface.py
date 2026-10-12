@@ -693,7 +693,7 @@ if __name__ == "__main__":
         volts_out = volts_out * 0.8 + hw.targetBatteryVoltage * 0.2
         amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
         # now update the EV with these filtered values
-        hw.setChargerVoltageAndCurrent(volts_out, amps_out)
+        hw.setChargerVoltageAndCurrent(int(volts_out), int(amps_out))
         
     hw.plugged_in = True        # charging session starts
     hw.setChargerParameters(500, 135)       # set up typical EVSE Max (available) volts and amps
