@@ -9,14 +9,14 @@ minimumChargeCurrent            0       8       Intel       [0]     1       0|25
 unused                          8       8       Intel       [1]     1       0|255       -
 minimumBatteryVoltage           16      16      Intel       [2,3]   1       0|600.00    volts
 maximumBatteryVoltage           32      16      Intel       [4,5]   1       0|600.00    volts
-chargingRateIndication          48      8       Intel       [6]     1       0|100       %
+socPercentFactor                48      8       Intel       [6]     1       0|100       %
 
 code
 ~~~~
 minimumChargeCurrent = data[0]
 minimumBatteryVoltage = data[2] + data[3]<<8
 maximumBatteryVoltage = data[4] + data[5]<<8
-chargingRateIndication = data[6]
+socPercentFactor = data[6]
 
 
 CAN Id 0x101    4 vars
