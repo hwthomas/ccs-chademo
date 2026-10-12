@@ -394,12 +394,12 @@ class hardwareInterface():
         # Charger tells EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
         # these are initialised to valid values because they may be used before CAN has been updated
         
-        self.maxChargerVoltage = 0.0       # CAN-ID 0x108 - charger sends maxAvailable values
-        self.maxChargerCurrent = 0.0
-        self.thresholdVoltage = 0.0        # this is the maximum for protection of the EV
+        self.maxChargerVoltage = 0         # CAN-ID 0x108 - charger sends maxAvailable values
+        self.maxChargerCurrent = 0  
+        self.thresholdVoltage = 0          # this is the maximum for protection of the EV
 
-        self.chargerVoltage = 0.0          # CAN-ID 0x109 - charger sends 'actual' volts/amps to the 
-        self.chargerCurrent = 0.0          # EV in response to 0x102 requests during the charging loop
+        self.chargerVoltage = 0            # CAN-ID 0x109 - charger sends 'actual' volts/amps to the 
+        self.chargerCurrent = 0            # EV in response to 0x102 requests during the charging loop
 
 
         # end of CHAdeMO current variables
