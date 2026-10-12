@@ -659,6 +659,7 @@ class hardwareInterface():
 
 pass    # end of class hardwareInterface
 
+
 # This specific 'addToTrace' function used when hardwareInterface (test) class instance is created
 startTime_ms = round(time()*1000)
 
@@ -669,6 +670,9 @@ def hwAddToTrace(s):
 
 if __name__ == "__main__":
     print("Testing hardwareInterface for ~20s...")
+
+    # create instance of hardwareInterface
+    hw = hardwareInterface(hwAddToTrace)
     
     volts_out = hw.targetBatteryVoltage     # start simulated charger volt_out with targetVoltage (from 0x102)
     amps_out = hw.chargeCurrentRequest      # ditto for amps_out. These will have been updated on first scan
@@ -685,8 +689,6 @@ if __name__ == "__main__":
         # now update the EV with these filtered values
         hw.setChargerVoltageAndCurrent(volts_out, amps_out)
         
-    # create instance of hardwareInterface
-    hw = hardwareInterface(hwAddToTrace)
     hw.plugged_in = True        # charging session starts
     hw.setChargerParameters(500, 135)       # set up typical EVSE Max (available) volts and amps
                                             # these values are sent to EV via CAN message 0x108
