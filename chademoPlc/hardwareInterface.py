@@ -374,9 +374,9 @@ class hardwareInterface():
 
         # the EV tells the charger the maximum volts & amps it 'needs' via CAN-ID 0x100
          
-        self.minChargeCurrent = None        # CAN-ID 0x100 - None means 'not known yet'
+        self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None       
-        self.maxBatteryVoltage = None
+        self.maxBatteryVoltage = 0.0        # initialise to valid value
         self.socPercentFactor = None
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
