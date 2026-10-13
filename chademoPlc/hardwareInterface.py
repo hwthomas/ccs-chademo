@@ -609,8 +609,8 @@ class hardwareInterface():
                 if self.socPercentFactor > 0:       # (it is used in the next calculation)
                     new_value = message.data[6] / self.socPercentFactor * 100
                     if(self.evStateOfCharge != new_value):
-                    self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
-                    self.evStateOfCharge = new_value
+                        self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
+                        self.evStateOfCharge = new_value
 
                 #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with EV request in ID 0x102
                 self.setChargerVoltageAndCurrent(self.chargerVoltage, self.chargerCurrent)
