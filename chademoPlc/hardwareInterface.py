@@ -703,7 +703,7 @@ if __name__ == "__main__":
         global volts_out, amps_out
         # process the volts & amps requests with a first-order filter
         volts_out = volts_out * 0.8 + hw.targetBatteryVoltage * 0.2
-        if(hw.chargeCurrentRequest = 0):
+        if(hw.chargeCurrentRequest == 0):
             amps_out = 0.0
         else:
             amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
