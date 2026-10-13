@@ -204,14 +204,15 @@ class hardwareInterface():
         if(maxCurrent != self.maxChargerCurrent):
             self.addToTrace("Setting charger 'available Current = %d A" % maxCurrent)
             self.maxChargerCurrent = int(maxCurrent)
+ 
         # construct CAN message 0x108 and send it (even if volts or current haven't changed)
         
         # DEBUG for initial timing tests, DON'T calculate threshold here. It will be initialised to zero, then set by test routine
         
         # self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
         
-        th_lo = self.thresholdVoltage & 0xFF
-        th_hi = self.thresholdVoltage >> 8
+        th_lo = int(self.thresholdVoltage) & 0xFF
+        th_hi = int(self.thresholdVoltage) >> 8
         msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
 
