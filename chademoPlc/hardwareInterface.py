@@ -720,7 +720,7 @@ if __name__ == "__main__":
                                     # the EV's 'maximum' Voltage and Current requirements to the charger
 
             if (i==150):            # set thresholdVoltage to EV maximum value
-                print("Set thresholdVoltage to EV maxBatteryVoltage
+                print("Set thresholdVoltage to EV maxBatteryVoltage")
                 hw.thresholdVoltage = hw.maxBatteryVoltage
                 hw.setChargerParameters(435, 135)       #  Force send of CAN-ID 0x108 with updated threshold value
                 print("0x108 thresholdVoltage = ", hw.thresholdVoltage) 
