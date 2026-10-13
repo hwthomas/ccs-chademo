@@ -390,7 +390,7 @@ class hardwareInterface():
         self.ratedCapacitykWh = None
 
         self.targetBatteryVoltage = 0       # CAN-ID 0x102 EV sends requests in charging loop
-        self.chargeCurrentRequest = None
+        self.chargeCurrentRequest = 0
         self.evFaultBits = None
         self.evStatusBits = None
         self.evStateOfCharge = None
