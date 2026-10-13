@@ -699,10 +699,14 @@ if __name__ == "__main__":
         # outputs back to the EV via CAN. Requests are read from CAN-ID 0x102, targetBatteryVoltage and
         # chargeCurrentRequest, and updates CAN-ID 0x109, outputVoltage and outputCurrent.  By calling
         # hw.setChargerVoltageAndCurrent, CAN message 0x109 is sent, even if Volts or Amps don't change
+        # simulate fast shutdown by setting output current immediately to zero if this is requested
         global volts_out, amps_out
         # process the volts & amps requests with a first-order filter
         volts_out = volts_out * 0.8 + hw.targetBatteryVoltage * 0.2
-        amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
+        if(hw.chargeCurrentRequest = 0):
+            amps_out = 0.0
+        else:
+            amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
         # now update the EV with these filtered values
         hw.setChargerVoltageAndCurrent(int(volts_out), int(amps_out))
         
