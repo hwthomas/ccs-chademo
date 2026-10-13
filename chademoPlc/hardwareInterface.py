@@ -722,7 +722,8 @@ if __name__ == "__main__":
             if (i==150):            # set thresholdVoltage to EV maximum value
                 print("Set thresholdVoltage to EV maxBatteryVoltage (from initial value of zero)")
                 hw.thresholdVoltage = hw.maxBatteryVoltage
-                hw.setChargerParameters(500, 135)       #  Force send of CAN-ID 0x108 with updated threshold value 
+                hw.setChargerParameters(500, 135)       #  Force send of CAN-ID 0x108 with updated threshold value
+                print("0x108 thresholdVoltage = ", hw.thresholdVoltage) 
                              
             if (i==200):            # by now (~3s after SS1), EV should assert signal 'k' ChargePermit 
                 print("Activate charge signal d2/SS2 to EV to enable HV contactors")
@@ -730,10 +731,11 @@ if __name__ == "__main__":
                                     # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
 
             if (i==300):            # EV requests voltage and current via CAN message 0x102 in charging loop
-                hw.setChargerVoltageAndCurrent(370, 2)      # set typical HV volts for 60% SOC (40% - 70%)
+                hw.setChargerVoltageAndCurrent(394, 2)      # set measured HV volts for 91% SOC (40% - 70%)
                 
             if (i >= 330):
-                pass                # simulateChargerResponse()   # invoke this if required
+                print("simulatedChargerResponse activated")
+                simulateChargerResponse()   # invoke this if required
 
             if (i==400):            # set EV current demand to zero 
                 print("Set test Charger Current request to zero")
