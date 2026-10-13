@@ -733,8 +733,10 @@ if __name__ == "__main__":
             if (i==300):            # EV requests voltage and current via CAN message 0x102 in charging loop
                 hw.setChargerVoltageAndCurrent(394, 2)      # set measured HV volts for 91% SOC (40% - 70%)
                 
-            if (i >= 330):
+            if (i == 330):
                 print("simulatedChargerResponse activated")
+                
+            if (i >= 330):
                 simulateChargerResponse()   # invoke this if required
 
             if (i==400):            # set EV current demand to zero 
