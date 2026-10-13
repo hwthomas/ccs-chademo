@@ -376,19 +376,20 @@ class hardwareInterface():
         self.evChargePermit = None      # input of signal_k (active LOW) via GPIO
 
         # The following class variables are for comms to/from the CHAdeMO EV
-
+        # some are initialised to valid values because they may be used before CAN has been updated
+ 
         # the EV tells the charger the maximum volts & amps it 'needs' via CAN-ID 0x100
          
         self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None       
-        self.maxBatteryVoltage = 0.0        # initialise to valid value
+        self.maxBatteryVoltage = 0          # initialise to valid value
         self.socPercentFactor = None
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
 
-        self.targetBatteryVoltage = None    # CAN-ID 0x102 EV sends requests in charging loop
+        self.targetBatteryVoltage = 0       # CAN-ID 0x102 EV sends requests in charging loop
         self.chargeCurrentRequest = None
         self.evFaultBits = None
         self.evStatusBits = None
@@ -397,8 +398,7 @@ class hardwareInterface():
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
         # Charger tells EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
-        # these are initialised to valid values because they may be used before CAN has been updated
-        
+       
         self.maxChargerVoltage = 0         # CAN-ID 0x108 - charger sends its Maximum Available values
         self.maxChargerCurrent = 0  
         self.thresholdVoltage = 0          # this is the maximum it will use (for protection of the EV)
