@@ -79,6 +79,8 @@ evNotInPark=(statusBits & 0x02) == 0x02
 evChargingFault=(statusBits & 0x04) == 0x04
 evContactorOpen=(statusBits & 0x08) == 0x08
 evNormalStopRequest=(statusBits & 0x10) == 0x10
+evV2XCompatible=(statusBits & 0x80) == 0x80
+
 
 
 CAN Id 0x108    4 vars  {eVContactorWeldingDetection, availableOutputVoltage,   }

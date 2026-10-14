@@ -21,7 +21,6 @@
 import can      # for message structure  
 import time     # for sleep and timings
 import sys
-import numpy as np  # for fast array comparisons if required
 
 from configmodule import getConfigValue, getConfigValueBool
 

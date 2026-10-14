@@ -389,10 +389,11 @@ class hardwareInterface():
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
 
-        self.targetBatteryVoltage = 0       # CAN-ID 0x102 EV sends requests in charging loop
+        self.evCHAdeMOversion = 0           # CAN-ID 0x102 EV sends requests in charging loop
+        self.targetBatteryVoltage = 0
         self.chargeCurrentRequest = 0
         self.evFaultBits = None
-        self.evStatusBits = None
+        self.evStatusBits = 0
         self.evStateOfCharge = None
 
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
@@ -591,6 +592,11 @@ class hardwareInterface():
 
             if message.arbitration_id == 0x102:
                 self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
+                new_value = message.data[0]
+                if(self.CHAdeMOversion != new_value
+                    self.AddToTrace("0x102 CHAdeMOversion code = %X" % new_value
+                    self.CHAdeMOversion = new_value
+                    
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("0x102 targetBatteryVoltage = %d V" % new_value)
@@ -691,19 +697,19 @@ if __name__ == "__main__":
     # create instance of hardwareInterface
     hw = hardwareInterface(hwAddToTrace)
 
-    volts_out = 380.0     # initialise simulated charger volts_out & amps_out (typical values)
-    amps_out = 2.0
+    volts_out = 0.0       # initialise simulated charger volts_out & amps_out (typical values)
+    amps_out = 0.0
     
     def simulateChargerResponse():      # ONLY call this after the hw.mainfunction has updated all CAN values
         # this filters the EV Current and Voltage requests with a simple first-order filter, and sends the 
         # outputs back to the EV via CAN. Requests are read from CAN-ID 0x102, targetBatteryVoltage and
-        # chargeCurrentRequest, and updates CAN-ID 0x109, outputVoltage and outputCurrent.  By calling
-        # hw.setChargerVoltageAndCurrent, CAN message 0x109 is sent, even if Volts or Amps don't change
+        # chargeCurrentRequest, and charger values outputVoltage and outputCurrent are reported back to the EV.
+        # By calling hw.setChargerVoltageAndCurrent, CAN message 0x109 is sent, (even if values are the same)
         # simulate fast shutdown by setting output current immediately to zero if this is requested
         global volts_out, amps_out
         # process the volts & amps requests with a first-order filter
         volts_out = volts_out * 0.8 + hw.targetBatteryVoltage * 0.2
-        if(hw.chargeCurrentRequest == 0):
+        if(hw.chargeCurrentRequest == 0):   # fast shutdown
             amps_out = 0.0
         else:
             amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
@@ -711,15 +717,15 @@ if __name__ == "__main__":
         hw.setChargerVoltageAndCurrent(int(volts_out), int(amps_out))
         
     hw.plugged_in = True        # charging session starts
-    hw.setChargerParameters(450, 135)       # set up typical EVSE Max (available) volts and amps
+    hw.setChargerParameters(500, 135)       # set up typical charger Max (available) volts and amps
                                             # these values are sent to EV via CAN message 0x108
-    hw.setChargerVoltageAndCurrent(380, 0)  # set HV volts & amps to 91% SOC values
+    hw.setChargerVoltageAndCurrent(370, 0)  # set HV volts & amps to typical initial values
                                             # these values are sent to EV via CAN message 0x109
     try:
         for i in range(0, 750):     # loop for ~25s at 30mS per scan
             hw.mainfunction()       # poll hardware interface, updating CAN-bus variables to/from the EV on each scan
-            if (i==30):             # after ~1s...
-                print("Start EV CAN-bus and inform charger of Maximum Voltage and Current needs")
+            if (i==33):             # after ~1s...
+                print("Start EV CAN-bus and inform charger of EV's Maximum Voltage and Current needs")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
                                     # the EV's 'maximum' Voltage and Current requirements to the charger
 
