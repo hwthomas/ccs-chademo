@@ -69,8 +69,9 @@ class can_decode():
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
             
-        self.targetBatteryVoltage = None    # CAN-ID 0x102  EV requests during charge phase
-        self.chargeCurrentRequest = None
+        self.evCHAdeMOversion = 0           # CAN-ID 0x102 EV sends requests in charging loop
+        self.targetBatteryVoltage = 0
+        self.chargeCurrentRequest = 0
         self.evFaultBits = None
         self.evStatusBits = None
         self.evStateOfCharge = None
@@ -135,6 +136,11 @@ class can_decode():
                     self.ratedCapacitykWh = new_value
                     
             if message.arbitration_id == 0x102:
+                new_value = message.data[0]
+                if(self.evCHAdeMOversion != new_value):
+                    self.addToTrace("0x102 CHAdeMOversion code = %X" % new_value)
+                    self.evCHAdeMOversion = new_value
+                    
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("ID 0x102: targetBatteryVoltage = %d V" % new_value)
@@ -155,10 +161,11 @@ class can_decode():
                     self.addToTrace("ID 0x102: evStatusBits = %X" % new_value)
                     self.evStatusBits = new_value
 
-                new_value = message.data[6]
-                if(self.evStateOfCharge != message.data[6]):
-                    self.addToTrace("ID 0x102: evStateOfCharge = %d" % new_value)
-                    self.evStateOfCharge = new_value
+                if self.socPercentFactor > 0:       # (it is used in the next calculation)
+                    new_value = message.data[6] / self.socPercentFactor * 100
+                    if(self.evStateOfCharge != new_value):
+                        self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
+                        self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x108:
                 new_value = int(message.data[1]) + int(message.data[2])*256

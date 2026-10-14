@@ -383,7 +383,7 @@ class hardwareInterface():
         self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None       
         self.maxBatteryVoltage = 0          # initialise to valid value
-        self.socPercentFactor = None
+        self.socPercentFactor = 100
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
