@@ -13,13 +13,14 @@ import can
 import time
 import os
 
-print('\n\rCAN Rx...Print loop')
+print("\n\Snooping Monitor on existing CAN comms. This is a simple Receive...Print loop")
 print("Don't bring up CAN0, it should be in use already....")
 # os.system("sudo /sbin/ip link set can0 down")    # Prevent "Busy" error if already UP
 # os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 
+# try and connect to running kernel driver can0
 try:
-    bus = can.Bus(channel='can0', interface='socketcan', can_filters=None)    # allow all CAN-IDs
+    bus = can.Bus(channel='can0', interface='socketcan', can_filters=None)    # allow *all* CAN-IDs
 except OSError:
     print('Cannot find CAN board.')
     exit()
@@ -51,6 +52,6 @@ except KeyboardInterrupt:
 
 # bus.shutdown()
 # os.system("sudo /sbin/ip link set can0 down")
-print("\n\rExiting without shutting CAN bus down - let other users do this") 
+print("\n\rExiting without shutting CAN bus down - let other (running) user do this") 
 
 
