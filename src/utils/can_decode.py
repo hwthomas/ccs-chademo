@@ -42,7 +42,7 @@ class can_decode():
         self.minChargeCurrent = None        # CAN-ID 0x100
         self.minBatteryVoltage = None
         self.maxBatteryVoltage = None
-        self.chargeRateIndication = None
+        self.socPercentFactor = None
         
         self.maxChargeTimeMins = None       # CAN-ID 0x101
         self.estChargeTimeMins = None
@@ -77,50 +77,56 @@ class can_decode():
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
                 if self.minChargeCurrent != new_value:
-                    self.addToTrace("CHAdeMO: minChargeCurrent = %d Amps" % new_value)
+                    self.addToTrace("0x100: minChargeCurrent = %d Amps" % new_value)
                     self.minChargeCurrent = new_value
  
                 new_value = int(message.data[2]) + int(message.data[3])*256
                 if(self.minBatteryVoltage != new_value):
-                    self.addToTrace("CHAdeMO: minBatteryVolts = %d V" % new_value)
+                    self.addToTrace("0x100: minBatteryVolts = %d V" % new_value)
                     self.minBatteryVoltage = new_value
                     
                 new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.maxBatteryVoltage != new_value):
-                    self.addToTrace("CHAdeMO: maxBatteryVolts = %d V" % new_value)
+                    self.addToTrace("0x100: maxBatteryVolts = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
+
+                new_value = message.data[6]
+                if(self.socPercentFactor != new_value):
+                    self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                    self.socPercentFactor = new_value
 
             if message.arbitration_id == 0x101:
                 new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.11
                 if(self.ratedCapacitykWh != new_value):
-                    self.addToTrace("CHAdeMO: ratedCapacity = %d kWh" % new_value)
+                    self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
                     
             if message.arbitration_id == 0x102:
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVolts != new_value):
-                    self.addToTrace("CHAdeMO: targetBatteryVolts = %d V" % new_value)
+                    self.addToTrace("0x102: targetBatteryVolts = %d V" % new_value)
                     self.targetBatteryVolts = new_value
                     
                 new_value = message.data[3]
                 if(self.chargeCurrentRequest != new_value):
-                    self.addToTrace("CHAdeMO: chargeCurrentRequest = %d A" % new_value)
+                    self.addToTrace("0x102: chargeCurrentRequest = %d A" % new_value)
                     self.chargeCurrentRequest = new_value
                     
                 new_value = message.data[4]
                 if(self.evFaultBits != new_value):
-                    self.addToTrace("CHAdeMO: evFaultBits = %X" % new_value)
+                    self.addToTrace("0x102: evFaultBits = %X" % new_value)
                     self.evFaultBits = new_value
                     
                 new_value = message.data[5]
                 if(self.evStatusBits != new_value):
-                    self.addToTrace("CHAdeMO: evStatusBits = %X" % new_value)
+                    self.addToTrace("0x102: evStatusBits = %X" % new_value)
                     self.evStatusBits = new_value
 
-                new_value = message.data[6]
-                if(self.evStateOfCharge != message.data[6]):
-                    self.addToTrace("CHAdeMO: evStateOfCharge = %d" % new_value)
-                    self.evStateOfCharge = new_value
+                if self.socPercentFactor > 0:       # (it is used in the next calculation)
+                    new_value = message.data[6] / self.socPercentFactor * 100
+                    if(self.evStateOfCharge != new_value):
+                        self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
+                        self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x108:
                 new_value = int(message.data[1]) + int(message.data[2])*256
