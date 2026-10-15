@@ -594,7 +594,7 @@ class hardwareInterface():
                 self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
                 new_value = message.data[0]
                 if(self.CHAdeMOversion != new_value
-                    self.AddToTrace("0x102 CHAdeMOversion code = %X" % new_value
+                    self.addToTrace("0x102 CHAdeMOversion code = %X" % new_value)
                     self.CHAdeMOversion = new_value
                     
                 new_value = int(message.data[1]) + int(message.data[2])*256
@@ -620,7 +620,7 @@ class hardwareInterface():
                 if self.socPercentFactor > 0:       # (it is used in the next calculation)
                     new_value = message.data[6] / self.socPercentFactor * 100
                     if(self.evStateOfCharge != new_value):
-                        self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
+                        self.addToTrace("0x102 evStateOfCharge = %d %%" % new_value)
                         self.evStateOfCharge = new_value
 
                 #  in charging loop, send 'actual' charger values to EV via ID 0x109 to compare with EV request in ID 0x102
