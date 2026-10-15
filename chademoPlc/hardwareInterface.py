@@ -593,7 +593,7 @@ class hardwareInterface():
             if message.arbitration_id == 0x102:
                 self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
                 new_value = message.data[0]
-                if(self.CHAdeMOversion != new_value)
+                if(self.CHAdeMOversion != new_value):
                     self.addToTrace("0x102 CHAdeMOversion code = %X" % new_value)
                     self.CHAdeMOversion = new_value
                     
