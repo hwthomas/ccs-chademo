@@ -14,8 +14,8 @@ import time
 import os
 
 print('\n\rCAN Rx...Print loop')
-print('Don't bring up CAN0, it should be in use already....')
-# os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
+print("Don't bring up CAN0, it should be in use already....")
+# os.system("sudo /sbin/ip link set can0 down")    # Prevent "Busy" error if already UP
 # os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 
 try:
@@ -24,7 +24,7 @@ except OSError:
     print('Cannot find CAN board.')
     exit()
 
-print('Ready')
+print("Ready")
 
 try:
     startTime_ms = round(time.time()*1000)          # startTime for message loop
@@ -47,9 +47,10 @@ try:
 
 except KeyboardInterrupt:
     # Catch keyboard interrupt
-    print('\n\rKeyboard interrupt') 
+    print("\n\rKeyboard interrupt") 
+
 # bus.shutdown()
 # os.system("sudo /sbin/ip link set can0 down")
-print('\n\rExiting without shutting CAN bus down - let other users do this') 
+print("\n\rExiting without shutting CAN bus down - let other users do this") 
 
 
