@@ -48,7 +48,6 @@ if (getConfigValue("charge_parameter_backend")=="chademo"):
         print('Cannot find CAN board.')
         exit
         
-    self.canbus = canbus    # set up class variable
     print("CAN-bus channel 'can0' opened successfully")
     # Allow some time for CAN to start up
     sleep(1.0)
@@ -319,8 +318,8 @@ class hardwareInterface():
         else:
             return True
 
-    def initPorts(self):    # no ports required, and CAN-bus already set up
-        pass    
+    def initPorts(self):        # no ports required, and CAN-bus already set up
+        self.canbus = canbus    # so just set up a class variable
 
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None, homeplughandler=None, mode=C_PEV_MODE):
         self.callbackAddToTrace = callbackAddToTrace
@@ -337,6 +336,7 @@ class hardwareInterface():
         # NB: only use this class variable after class has been created
         if (getConfigValue("charge_parameter_backend")=="chademo"):
             self.chademo_backend = True
+            self.canbus = canbus    # set up a class variable
         
         # The following conditional code enables (future) hardware charger extensions
         if (self.mode==C_EVSE_MODE):
