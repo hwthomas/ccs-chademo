@@ -42,7 +42,6 @@ if __name__ == "__main__":
     with open(can_file) as file:
         startTime_ms = round(time.time()*1000)
         for line in file:                   # iterate through each line in the file
-            time.sleep(0.05)                # wait 50mS before next message
             currentTime_ms = round(time.time()*1000)
 
             items = line.split(',')         # <list> of comma separated <str>
@@ -58,6 +57,7 @@ if __name__ == "__main__":
 
             try:
                 bus.send(msg)
+                time.sleep(0.05)                # wait 50mS before next message
             except can.CanError:
                 print("CAN error: - Message NOT sent")  # exit 'for' loop
                 bus.shutdown()
@@ -67,9 +67,9 @@ if __name__ == "__main__":
                 bus.shutdown()
                 break
         pass    # end of for loop
-                
-        print("All lines in log processed - log file closed")
     pass     # can_file gets closed at end of with...
+    print("Normal program end - log file closed")
+    bus.shutdown()
     os.system("sudo /sbin/ip link set can0 down")
 pass    # end of main
 

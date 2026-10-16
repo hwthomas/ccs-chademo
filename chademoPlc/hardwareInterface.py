@@ -200,6 +200,14 @@ class hardwareInterface():
     # The next two functions are only called by the CAN-bus update in mainfunction_chademo, and by the test routine __main__ 
     # note that they depend on CAN variables being compared, so these are initialised (above) to valid values, and NOT 'None'
     def setChargerParameters(self, maxVoltage, maxCurrent):
+        # when this function is called, construct CAN message 0x108 and send it (even if volts or current haven't changed)
+        self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
+        th_lo = int(self.thresholdVoltage) & 0xFF
+        th_hi = int(self.thresholdVoltage) >> 8
+        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        self.canbus.send(msg)
+
+        # if maxVoltage or maxCurrent has changed, log this to trace
         if(maxVoltage != self.maxChargerVoltage):
             self.addToTrace("Setting charger 'available Voltage = %d V" % maxVoltage)
             self.maxChargerVoltage = int(maxVoltage)
@@ -207,24 +215,21 @@ class hardwareInterface():
             self.addToTrace("Setting charger 'available Current = %d A" % maxCurrent)
             self.maxChargerCurrent = int(maxCurrent)
  
-        # construct CAN message 0x108 and send it (even if volts or current haven't changed)
-        self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
-        th_lo = int(self.thresholdVoltage) & 0xFF
-        th_hi = int(self.thresholdVoltage) >> 8
-        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
-        self.canbus.send(msg)
 
     def setChargerVoltageAndCurrent(self, voltageNow, currentNow):
+        # when this function is called, construct CAN message 0x109 and send it (even if volts or current haven't changed)
+        status = 4    # always report connector locked (adapter has no lock at present)
+        msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        self.canbus.send(msg)
+
+        # if voltageNow or currentNow has changed, log this to trace
         if(voltageNow != self.chargerVoltage):
             self.addToTrace("Setting charger 'actual' Voltage = %d V" % voltageNow)
             self.chargerVoltage = int(voltageNow)
         if(currentNow != self.chargerCurrent):
             self.addToTrace("Setting charger 'actual' Current = %d A" % currentNow)
             self.chargerCurrent = int(currentNow)
-        # when this function is called, construct CAN message 0x109 and send it (even if volts or current haven't changed)
-        status = 4    # always report connector locked (adapter has no lock at present)
-        msg = can.Message(arbitration_id=0x109, data=[0, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
-        self.canbus.send(msg)
+
         
     def setPowerSupplyVoltageAndCurrent(self, targetVoltage, targetCurrent, strMode):
         # if we are the charger, and have a real power supply which we want to control, we do it here
@@ -336,7 +341,7 @@ class hardwareInterface():
         # NB: only use this class variable after class has been created
         if (getConfigValue("charge_parameter_backend")=="chademo"):
             self.chademo_backend = True
-            self.canbus = canbus    # set up a class variable
+            self.canbus = canbus    # set up a class variable for canbus at the same time
         
         # The following conditional code enables (future) hardware charger extensions
         if (self.mode==C_EVSE_MODE):
@@ -707,11 +712,11 @@ if __name__ == "__main__":
         global volts_out, amps_out
         # process the volts & amps requests with a first-order filter
         volts_out = volts_out * 0.8 + hw.targetBatteryVoltage * 0.2
-        if(hw.chargeCurrentRequest == 0):   # fast shutdown
+        if(hw.chargeCurrentRequest == 0):   # mre rapid shutdown (ish)
             amps_out = amps_out * 0.2 + hw.chargeCurrentRequest * 0.8
         else:
             amps_out = amps_out * 0.8 + hw.chargeCurrentRequest * 0.2
-        # now update the EV with these filtered values
+        # now update the EV with these filtered values (check whether this sends ID 0x109 twice?)
         hw.setChargerVoltageAndCurrent(int(volts_out), int(amps_out))
         
     hw.plugged_in = True            # charging session starts
@@ -719,8 +724,12 @@ if __name__ == "__main__":
                                             # these values are sent to EV via CAN message 0x108
     hw.setChargerVoltageAndCurrent(0, 0)    # set HV volts & amps to zero
                                             # these values are sent to EV via CAN message 0x109
+    
+    # the following loop is structured so that at various points parameters can be changed, and the EV response
+    # monitored for timeouts, etc.  Initially, the loop is set to run for 805 mainfunction scans at ~30mS/scan
+    # is just over 25secs  
     try:
-        for i in range(0, 805):     # loop for ~25+ Sec at 30mS per scan
+        for i in range(0, 960):     # loop for ~30+ Sec at ~31mS per scan
             hw.mainfunction()       # poll hardware interface, updating CAN-bus variables to/from the EV on each scan
             if (i==5):              # after ~150mS...
                 print("Start EV CAN-bus and inform charger of EV's Maximum Voltage and Current needs")
@@ -749,7 +758,7 @@ if __name__ == "__main__":
             if (i==800):
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
 
-            sleep(0.03)             # wait for approx. scan time
+            sleep(0.03)             # wait for approx. scan time. ie 30mS sleep + 1mS computation
 
     except KeyboardInterrupt:       # ctrl-C quits if all else fails!
             pass
