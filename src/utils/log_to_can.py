@@ -60,15 +60,16 @@ if __name__ == "__main__":
                 bus.send(msg)
             except can.CanError:
                 print("CAN error: - Message NOT sent")  # exit 'for' loop
+                bus.shutdown()
                 break
             except KeyboardInterrupt:
                 print("Ctrl-C typed to exit program")   # exit 'for' loop
+                bus.shutdown()
                 break
         pass    # end of for loop
                 
         print("All lines in log processed - log file closed")
     pass     # can_file gets closed at end of with...
-    bus.shutdown()
     os.system("sudo /sbin/ip link set can0 down")
 pass    # end of main
 
