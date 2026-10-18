@@ -651,7 +651,12 @@ class hardwareInterface():
                     self.addToTrace("0x101 ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
 
-            if message.arbitration_id == 0x108:     # we don't normally receive 0x108, only send via setChargerParameters
+            if(message.arbitration_id == 0x108):    # we don't normally receive 0x108, only send via setChargerParameters
+                new_value = message.data[0]
+                if(self.evseSeqState108 != new_value):
+                    self.addToTrace("ID 0x108: evseSequenceState = %X" % new_value)
+                    self.evseSeqState108 = new_value
+                     
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.maxChargerVoltage != new_value):
                     self.addToTrace("ID 0x108: maxChargerVoltage = %d V" % new_value)
@@ -667,7 +672,12 @@ class hardwareInterface():
                     self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
                     self.thresholdVoltage = new_value
 
-                message.arbitration_id == 0x109:     # we don't normally receive 0x109, only send via setChargerVoltageandCurrent
+            if(message.arbitration_id == 0x109):    # we don't normally receive 0x109, only send via setChargerVoltageandCurrent
+                new_value = message.data[0]
+                if(self.evseSeqState109 != new_value):
+                    self.addToTrace("ID 0x109: evseSequenceState = %X" % new_value)
+                    self.evseSeqState109 = new_value
+                    
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
                     self.addToTrace("ID 0x109: actual charger Voltage = %d V" % new_value)
