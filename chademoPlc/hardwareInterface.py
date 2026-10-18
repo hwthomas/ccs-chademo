@@ -204,10 +204,8 @@ class hardwareInterface():
         self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
         th_lo = int(self.thresholdVoltage) & 0xFF
         th_hi = int(self.thresholdVoltage) >> 8
-        if(self.cdmVersion >= 1):
-            cdm = self.cdmVersion
             
-        msg = can.Message(arbitration_id=0x108, data=[cdm, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
 
         # if maxVoltage or maxCurrent has changed, log this to trace
@@ -385,7 +383,7 @@ class hardwareInterface():
 
         # The following class variables are for comms to/from the CHAdeMO EV
         # some are initialised to valid values because they may be used before CAN has been updated
-        self.cdmVersion = 1                 # CHAdeMO version code from EV (0=0.9, 1=1.0/1/2, 2=2.0)
+        self.cdmVersion = 0                 # CHAdeMO version code from EV (1=0.9, 2=1.0/1/2)
  
         # EV tells the charger the maximum volts & amps it 'needs' via CAN-ID 0x100
         self.evSeqState100 = None           # CAN-ID 0x100 EV sends sequence state in byte 0
@@ -598,10 +596,12 @@ class hardwareInterface():
                 # set 'available' charger values and send to the EV via ID 0x108 for validation
                 self.setChargerParameters(self.maxBatteryVoltage, self.maxChargerCurrent) 
 
-            if message.arbitration_id == 0x102:
             # EV also sends its sequence state (0x26/0x29) (and CHAdeMO version) in ID 0x100 byte 0
+            if message.arbitration_id == 0x102:
                 self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
                 new_value = message.data[0]
+                if(new_value == 0x02):              # CHAdeMO version code, else EV sequence state 0x26/0x29
+                    self.cdmVersion = 2
                 if(self.evSeqState102 != new_value):
                     self.addToTrace("0x102 evSequenceState102 = %X" % new_value)
                     self.evSeqState102 = new_value

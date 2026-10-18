@@ -18,7 +18,16 @@ print("Don't bring up CAN0, it should be in use already....")
 # os.system("sudo /sbin/ip link set can0 down")    # Prevent "Busy" error if already UP
 # os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 
-# try and connect to running kernel driver can0
+# try and connect to running kernel driver can0, with filters for just the CHAdeMO CAN-IDs
+filters = [
+    {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
+    {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
+    {"can_id": 0x102, "can_mask": 0x7FF, "extended": False},
+    {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
+    {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
+try:
+    canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters)
+
 try:
     bus = can.Bus(channel='can0', interface='socketcan', can_filters=None)    # allow *all* CAN-IDs
 except OSError:
