@@ -69,8 +69,8 @@ class can_decode():
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
             
-        self.evCHAdeMOversion = 0           # CAN-ID 0x102 EV sends requests in charging loop
-        self.targetBatteryVoltage = 0
+        self.evCHAdeMO_version = 0          # CAN-ID 0x102 - EV CHAdeMo version
+        self.targetBatteryVoltage = 0       # EV sends requests in charging loop
         self.chargeCurrentRequest = 0
         self.evFaultBits = None
         self.evStatusBits = None
@@ -82,6 +82,7 @@ class can_decode():
         self.maxChargerCurrent = None
         self.thresholdVoltage = None        # maximum threshold voltage for EV protection
 
+        self.evseCHAdeMo_version = 2        # CAN-ID 0x109 EVSE (charger) CHAdeMO version
         self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to the EV in 
         self.chargerCurrent = None          # response to EV requests during the charging loop
 
@@ -127,7 +128,7 @@ class can_decode():
 
                 new_value = message.data[3]
                 if(self.estChargeTimeMins != new_value):
-                    self.addToTrace("CHAdeMO: estimated charge time = %d mins" % new_value)
+                    self.addToTrace("ID 0x101: estimated charge time = %d mins" % new_value)
                     self.estChargeTimeMins = new_value
                     
                 new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
@@ -137,9 +138,9 @@ class can_decode():
                     
             if message.arbitration_id == 0x102:
                 new_value = message.data[0]
-                if(self.evCHAdeMOversion != new_value):
-                    self.addToTrace("0x102 CHAdeMOversion code = %X" % new_value)
-                    self.evCHAdeMOversion = new_value
+                if(self.evCHAdeMO_version != new_value):                            # 0 = CdM < 0.9
+                    self.addToTrace("0x102 EV CHAdeMO version = %X" % new_value)    # 1 = CdM = 0.9
+                    self.evCHAdeMO_version = new_value                              # 2 = CdM = 1.0+
                     
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
@@ -183,7 +184,12 @@ class can_decode():
                     self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
                     self.thresholdVoltage = new_value
 
-            if message.arbitration_id == 0x109:
+            if message.arbitration_id == 0x109
+                new_value = message.data[0]
+                if(self.evseCdM_version != new_value):
+                    self.addToTrace("ID 0x109: EVSE CHAdeMO version = %X " % new_value)
+                    self.evseCdM_version = new_value
+                
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
                     self.addToTrace("ID 0x109: actual charger Voltage = %d V" % new_value)
