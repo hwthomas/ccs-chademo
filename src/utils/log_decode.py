@@ -82,7 +82,7 @@ class can_decode():
         self.maxChargerCurrent = None
         self.thresholdVoltage = None        # maximum threshold voltage for EV protection
 
-        self.evseCHAdeMo_version = 2        # CAN-ID 0x109 EVSE (charger) CHAdeMO version
+        self.evseCHAdeMO_version = 2        # CAN-ID 0x109 EVSE (charger) CHAdeMO version
         self.chargerVoltage = None          # CAN-ID 0x109 charger sends 'actual' to the EV in 
         self.chargerCurrent = None          # response to EV requests during the charging loop
 
@@ -184,11 +184,11 @@ class can_decode():
                     self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
                     self.thresholdVoltage = new_value
 
-            if message.arbitration_id == 0x109
+            if message.arbitration_id == 0x109:
                 new_value = message.data[0]
-                if(self.evseCdM_version != new_value):
+                if(self.evseCHAdeMO_version != new_value):
                     self.addToTrace("ID 0x109: EVSE CHAdeMO version = %X " % new_value)
-                    self.evseCdM_version = new_value
+                    self.evseCHAdeMO_version = new_value
                 
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
