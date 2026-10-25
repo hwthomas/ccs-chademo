@@ -164,7 +164,7 @@ class can_decode():
                 if self.socPercentFactor > 0:       # (it is used in the next calculation)
                     new_value = message.data[6] / self.socPercentFactor * 100
                     if(self.evStateOfCharge != new_value):
-                        self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
+                        self.addToTrace("0x102 evStateOfCharge = %d %%" % new_value)
                         self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x108:
