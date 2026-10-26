@@ -68,7 +68,7 @@ class qcCanLog:
             self.canbus.send(msg)
         except can.CanError:
             print("CAN error: - Message NOT sent")
-            bus.shutdown(
+            bus.shutdown()
             exit()
 
     
@@ -84,7 +84,7 @@ class qcCanLog:
             self.canbus.send(msg)
         except can.CanError:
             print("CAN error: - shutting down")
-            bus.shutdown(
+            bus.shutdown()
             exit()
 
 
