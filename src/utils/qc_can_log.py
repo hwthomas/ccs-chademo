@@ -157,8 +157,8 @@ class qcCanLog:
                 self.decode_message(message)    # check message and decode if necessary
                 
         except KeyboardInterrupt:
-        # Catch keyboard interrupt
-        print('\n\rKeyboard interrupt') 
+            # Catch keyboard interrupt
+            print('\n\rKeyboard interrupt') 
         
     def close(self):
         self.logfile.close()        # close log file  
