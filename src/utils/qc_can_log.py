@@ -65,8 +65,12 @@ class qcCanLog:
         th_hi = int(self.thresholdVoltage) >> 8
         try:
             msg = can.Message(arbitration_id=0x108, data=[self.weldDetect, mv_lo, mv_hi, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
-            self.canbus.send(msg
-        except
+            self.canbus.send(msg)
+        except can.CanError:
+            print("CAN error: - Message NOT sent")
+            bus.shutdown(
+            exit()
+
     
     # send CAN message 0x109 to the EV with charging loop *actual* values (chargerVoltage, chargeCurrent)
     # this message must be send after CAN message 0x102 from the EV with *its* voltage and current requests          
@@ -74,17 +78,20 @@ class qcCanLog:
         # construct CAN message 0x109 and send it (even if volts or current haven't changed)
         status = 4    # always report connector locked (adapter has no lock at present)
         cv_lo = int(self.chargerVoltage) & 0xFF
-        cv_hi = int(self.chargerVoltage) >> 8 
-        msg = can.Message(arbitration_id=0x109, data=[self.evseCHAdeMO_version, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
-        self.canbus.send(msg)
+        cv_hi = int(self.chargerVoltage) >> 8
+        try:
+            msg = can.Message(arbitration_id=0x109, data=[self.evseCHAdeMO_version, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+            self.canbus.send(msg)
+        except can.CanError:
+            print("CAN error: - shutting down")
+            bus.shutdown(
+            exit()
+
 
     # Check CAN message and decode if necessary to extract EV variables, and then send charger messages back to EV
     def decode_message(self, message):
         if(message.arbitration_id == 0x100):
-            new_value = int(message.data[4]) + int(message.data[5])*256
-            if(self.maxBatteryVoltage != new_value):
-                print("ID 0x100: maxBatteryVolts = %d V" % new_value)
-                self.maxBatteryVoltage = new_value
+            self.maxBatteryVoltage = int(message.data[4]) + int(message.data[5])*256
             self.canSend0x108()      # send reply 0x108 to EV
 
         if(message.arbitration_id == 0x102):
