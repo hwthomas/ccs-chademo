@@ -77,8 +77,8 @@ class qcCanLog():
         self.canSend0x109()      # send reply 0x109 to EV
             
     def __init__(self):
-        # define class variables
-        self.loopcounter = 0
+
+        self.loopcounter = 0                # define class variables
         self.canbus = None
         self.logfile = None
         self.startTime_mS = 0.0             # time in mS at which class is created
@@ -103,8 +103,8 @@ class qcCanLog():
         # open log file to be written to, as first argument to command line
         if(sys.argv[1] != ''):
             self.logfile = sys.argv[1]      # get log filename from command-line
-            print("Opening log file ", logfile, " for writing")
-            open(self.logfile, 'rw')
+            print("Opening log file ", self.logfile, " for writing")
+            open(self.logfile, 'w+')
         else:
             print("Please supply log file name as first program argument")
         exit
@@ -130,7 +130,7 @@ class qcCanLog():
 
         print('CAN-bus Ready...')
         
-        currentTime_mS = round(time()*1000)
+        currentTime_mS = round(time.time()*1000)
         self.startTime_mS = currentTime_mS      # snapshot start time in mS
   
 
@@ -143,7 +143,7 @@ class qcCanLog():
             message = self.canbus.recv(0)   # non-blocking check for relevant CAN-bus message
             if message:
                 self.canActive = True       # something is happening on the EV CAN-bus
-                currentTime_mS = round(time()*1000)
+                currentTime_mS = round(time.time()*1000)
                 dT_mS = currentTime_mS - self.startTime_mS
                 
                 # format timestamp, ID, and dlc first
@@ -202,7 +202,7 @@ if __name__ == "__main__":
             if (i==900):
                 print("Turn d1/SS1 off")
 
-            sleep(0.03)             # wait for approx. scan time. ie 30mS sleep + 1mS computation
+            time.sleep(0.03)             # wait for approx. scan time. ie 30mS sleep + 1mS computation
 
     except KeyboardInterrupt:       # ctrl-C quits if all else fails!
             pass
