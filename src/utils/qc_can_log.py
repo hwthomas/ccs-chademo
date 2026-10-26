@@ -102,11 +102,11 @@ class qcCanLog():
 
         # open log file to be written to, as first argument to command line
         if(sys.argv[1] != ''):
-            self.logfile = sys.argv[1]      # get log filename from command-line
-            print("Opening log file ", self.logfile, " for writing")
-            open(self.logfile, 'w+')
+            log_name = sys.argv[1]      # get log filename from command-line
+            print("Opening log file ", log_name, " for writing")
+            self.logfile = open(log_name, 'w+')
         else:
-            print("Please supply log file name as first program argument")
+            print("Please supply log filename as first program argument")
         exit
 
         print('Bring up CAN0....')
