@@ -28,31 +28,8 @@ print('\n\rCAN Rx...log test')
 # In operation, creating an instance of qcCanLog creates the log file and the CAN-bus as class variables, and
 # calling 'qcCanLog.close()' tidies up at the end.
 
-class qcCanLog:
+class qcCanLog():
     
-    # define class variables
-    self.loopcounter = 0
-    self.canbus = None
-    self.logfile = None
-    self.startTime_mS = 0.0             # time in mS at which class is created
-        
-    # EV tells the charger the maximum volts it 'needs' via CAN-ID 0x100
-    self.maxBatteryVoltage = 402        # initialise to valid value
-
-    # EV voltage and current requests received in CAN-ID 0x102
-    self.targetBatteryVoltage = 0       # target voltage request
-    self.chargeCurrentRequest = 0       # target current request
-    
-    # EVSE tells the EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
-    self.weldDetect = 0                 # CAN-ID 0x108 limit values from the charger to the car
-    self.maxChargerVoltage = 0          # its maximum available voltage
-    self.maxChargerCurrent = 0          # its maximum available current  
-    self.thresholdVoltage = 0           # this is the maximum it will *use* (for protection of the EV)
-
-    self.evseCHAdeMO_version = 2        # CAN-ID 0x109 - CHAdeMO version charger can use
-    self.chargerVoltage = 0             # then the actual voltage and current being delivered in
-    self.chargerCurrent = 0             # response to the EV 0x102 requests in the charging loop
-
     # send CAN message 0x108 to the EV with the Charger parameters (maxChargerVoltage, maxChargerCurrent).
     # this message must be send after CAN message 0x100 has been received from the EV with its parameter
     # maxBatteryVoltage.  Parameters maxChargerVoltage/maxChargerCurrent are fixed properties of the charger       
@@ -100,6 +77,29 @@ class qcCanLog:
         self.canSend0x109()      # send reply 0x109 to EV
             
     def __init__(self):
+        # define class variables
+        self.loopcounter = 0
+        self.canbus = None
+        self.logfile = None
+        self.startTime_mS = 0.0             # time in mS at which class is created
+        
+        # EV tells the charger the maximum volts it 'needs' via CAN-ID 0x100
+        self.maxBatteryVoltage = 402        # initialise to valid value
+
+        # EV voltage and current requests received in CAN-ID 0x102
+        self.targetBatteryVoltage = 0       # target voltage request
+        self.chargeCurrentRequest = 0       # target current request
+    
+        # EVSE tells the EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
+        elf.weldDetect = 0                 # CAN-ID 0x108 limit values from the charger to the car
+        self.maxChargerVoltage = 0          # its maximum available voltage
+        self.maxChargerCurrent = 0          # its maximum available current  
+        self.thresholdVoltage = 0           # this is the maximum it will *use* (for protection of the EV)
+
+        self.evseCHAdeMO_version = 2        # CAN-ID 0x109 - CHAdeMO version charger can use
+        self.chargerVoltage = 0             # then the actual voltage and current being delivered in
+        self.chargerCurrent = 0             # response to the EV 0x102 requests in the charging loop
+
         # open log file to be written to, as first argument to command line
         if(sys.argv[1] != ''):
             self.logfile = sys.argv[1]      # get log filename from command-line
