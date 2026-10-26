@@ -188,7 +188,7 @@ if __name__ == "__main__":
         for i in range(0, 1000):    # loop for ~30+ Sec at ~31mS per scan
             qc.mainfunction()       # poll Nissan Leaf+, updating CAN-bus variables to/from the EV on each scan
             if (i==100):            # after ~3s...
-                print("Start EV CAN-bus and log all EV canbus responses")
+                print("Activate charge signal d1/SS1 to start EV CAN comms")
 
             if (i==300):            # by now (~10s after SS1), EV should assert signal 'k' ChargePermit 
                 print("Activate charge signal d2/SS2 to EV to enable HV contactors")

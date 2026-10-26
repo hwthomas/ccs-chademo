@@ -18,7 +18,7 @@ os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 time.sleep(0.1) 
 
 try:
-    bus = can.Bus(channel='can0', interface='socketcan', can_filters=None)    # allow all CAN-IDs
+    bus = can.Bus(channel='can0', interface='socketcan', can_filters=None, receive_own_messages = True)    # allow all CAN-IDs
 except OSError:
     print('Cannot find CAN board.')
     exit()
