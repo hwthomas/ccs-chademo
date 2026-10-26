@@ -91,7 +91,7 @@ class qcCanLog():
         self.chargeCurrentRequest = 0       # target current request
     
         # EVSE tells the EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
-        elf.weldDetect = 0                 # CAN-ID 0x108 limit values from the charger to the car
+        self.weldDetect = 0                 # CAN-ID 0x108 limit values from the charger to the car
         self.maxChargerVoltage = 0          # its maximum available voltage
         self.maxChargerCurrent = 0          # its maximum available current  
         self.thresholdVoltage = 0           # this is the maximum it will *use* (for protection of the EV)
