@@ -42,12 +42,57 @@ filters = [
     {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
     {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
 try:
-    bus = can.Bus(channel='can0', interface='socketcan', can_filters=filters, receive_own_messages = True)
+    canbus = can.Bus(channel='can0', interface='socketcan', can_filters=filters, receive_own_messages = True)
 except OSError:
     print('Cannot find CAN board.')
     exit()
 
 print('Ready')
+
+# define some fixed parameters for the 2 'charger' messages following, which are sent after receiving 0x100/0x102 from the EV
+evseCHAdeMO_version = 2
+maxBatteryVoltage = 0
+maxChargerVoltage = 0
+thresholdVoltage = 0
+maxChargerCurrent = 0
+chargerVoltage) = 0
+chargerCurrent = 0
+weldDetect = 0
+
+# send CAN message 0x108 to the EV with the Charger parameters (maxChargerVoltage, maxChargerCurrent).
+# this message must be send after CAN message 0x100 has been received from the EV with its parameter
+# maxBatteryVoltage.  Parameters maxChargerVoltage/maxChargerCurrent are fixed properties of the charger       
+def canSend0x108(self):
+    # construct CAN message 0x108 and send it (even if maxVolts or maxCurrent haven't changed)
+    thresholdVoltage = int(min(maxBatteryVoltage, maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
+    mv_lo = int(maxChargerVoltage) & 0xFF
+    mv_hi = int(maxChargerVoltage) >> 8
+    th_lo = int(thresholdVoltage) & 0xFF
+    th_hi = int(thresholdVoltage) >> 8
+    try:
+        msg = can.Message(arbitration_id=0x108, data=[weldDetect, mv_lo, mv_hi, maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        canbus.send(msg)
+    except can.CanError:
+        print("CAN error: - Message NOT sent")
+        canbus.shutdown()
+        exit()
+
+# send CAN message 0x109 to the EV with charging loop *actual* values (chargerVoltage, chargeCurrent)
+# this message must be send after CAN message 0x102 from the EV with *its* voltage and current requests          
+def canSend0x109(self):
+    # construct CAN message 0x109 and send it (even if volts or current haven't changed)
+    status = 4    # always report connector locked (adapter has no lock at present)
+    cv_lo = int(chargerVoltage) & 0xFF
+    cv_hi = int(chargerVoltage) >> 8
+    try:
+        msg = can.Message(arbitration_id=0x109, data=[evseCHAdeMO_version, cv_lo, cv_hi, chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        canbus.send(msg)
+    except can.CanError:
+        print("CAN error: - shutting down")
+        canbus.shutdown()
+        exit()
+
+
 
 try:
     startTime_ms = round(time.time()*1000)          # startTime for message loop
