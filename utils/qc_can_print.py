@@ -130,11 +130,11 @@ try:
     for i in range(0, 660):             # loop for ~20+ Sec at ~31mS per scan
         # GPIO and CAN-bus updates
         cdm.readEVchargePermit()        # poll EVchargePermit GPIO input (signal k) on each scan
-        if(i==5):
+        if(i == 5):
             cdm.setSS1_On()             # after ~150mS enable CAN comms on EV
         if(i == 150):
             cdm.setSS2_On()             # after ~05secs enable EV contactors
-         if(i == 500):
+        if(i == 500):
             cdm.setSS2_Off()            # after ~15secs disable EV contactors
         if(i == 600):
             cdm.setSS1_Off()            # after ~18secs disable CAN comms on EV
