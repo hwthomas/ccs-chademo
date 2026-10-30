@@ -57,13 +57,13 @@ class CHAdeMO():
         self.GPIO = GPIO
         self.canbus = canbus
         self.evseCHAdeMO_version = 2
-        self.maxBatteryVoltage = 0
-        self.maxChargerVoltage = 0
-        self.maxChargerCurrent = 0
-        self.thresholdVoltage = 0
+        self.maxBatteryVoltage = 435
+        self.maxChargerVoltage = 510
+        self.maxChargerCurrent = 135
+        self.thresholdVoltage = 435
         self.chargerVoltage = 0
         self.chargerCurrent = 0
-        self.weldDetect = 0
+        self.weldDetect = 1
         self.evChargePermit = 0
 
     # send CAN message 0x108 to the EV with the Charger parameters (maxChargerVoltage, maxChargerCurrent).
@@ -127,11 +127,18 @@ pass    # end of class CHAdeMO
 try:
     cdm = CHAdeMO()                                 # create CHAdeMO class and local variables
     startTime_ms = round(time.time()*1000)          # startTime for message loop
-    for i in range(0, 600):             # loop for ~20+ Sec at ~31mS per scan
+    for i in range(0, 660):             # loop for ~20+ Sec at ~31mS per scan
         # GPIO and CAN-bus updates
         cdm.readEVchargePermit()        # poll EVchargePermit GPIO input (signal k) on each scan
-        if (i==5):
+        if(i==5):
             cdm.setSS1_On()             # after ~150mS enable CAN comms on EV
+        if(i == 150):
+            cdm.setSS2_On()             # after ~05secs enable EV contactors
+         if(i == 500):
+            cdm.setSS2_Off()            # after ~15secs disable EV contactors
+        if(i == 600):
+            cdm.setSS1_Off()            # after ~18secs disable CAN comms on EV
+            
         message = cdm.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
         if message:
             currentTime_ms = round(time.time()*1000)    # update current time
