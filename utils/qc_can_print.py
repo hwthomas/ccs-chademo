@@ -75,7 +75,7 @@ class CHAdeMO():
         mv_hi = int(self.maxChargerVoltage) >> 8
         th_lo = int(self.thresholdVoltage) & 0xFF
         th_hi = int(self.thresholdVoltage) >> 8
-        msg = can.Message(arbitration_id=0x108, data=[weldDetect, mv_lo, mv_hi, maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        msg = can.Message(arbitration_id=0x108, data=[self.weldDetect, mv_lo, mv_hi, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
         try:
             self.canbus.send(msg)
         except can.CanError:
