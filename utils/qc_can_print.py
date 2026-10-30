@@ -61,7 +61,7 @@ class CHAdeMO():
         self.maxChargerVoltage = 0
         self.maxChargerCurrent = 0
         self.thresholdVoltage = 0
-        self.chargerVoltage) = 0
+        self.chargerVoltage = 0
         self.chargerCurrent = 0
         self.weldDetect = 0
         self.evChargePermit = 0
