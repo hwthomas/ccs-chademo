@@ -82,7 +82,7 @@ class CHAdeMO():
             print("CAN error: - Message NOT sent")
             self.canbus.shutdown()
             exit()
-
+    
     # send CAN message 0x109 to the EV with charging loop *actual* values (chargerVoltage, chargeCurrent)
     # this message must be send after CAN message 0x102 from the EV with *its* voltage and current requests          
     def canSend0x109(self):
@@ -90,12 +90,12 @@ class CHAdeMO():
         cv_lo = int(self.chargerVoltage) & 0xFF
         cv_hi = int(self.chargerVoltage) >> 8
         msg = can.Message(arbitration_id=0x109, data=[self.evseCHAdeMO_version, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
-    try:
-        self.canbus.send(msg)
-    except can.CanError:
-        print("CAN error: - shutting down")
-        self.canbus.shutdown()
-        exit()
+        try:
+            self.canbus.send(msg)
+        except can.CanError:
+            print("CAN error: - shutting down")
+            self.canbus.shutdown()
+            exit()
      
     # define GPIO API for d1/SS1, d2/SS hardware interlocks and evChargePermit
     def setSS1_On(self):
