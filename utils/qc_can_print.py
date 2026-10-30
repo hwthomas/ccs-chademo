@@ -75,8 +75,8 @@ class CHAdeMO():
         mv_hi = int(self.maxChargerVoltage) >> 8
         th_lo = int(self.thresholdVoltage) & 0xFF
         th_hi = int(self.thresholdVoltage) >> 8
+        msg = can.Message(arbitration_id=0x108, data=[weldDetect, mv_lo, mv_hi, maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
         try:
-            msg = can.Message(arbitration_id=0x108, data=[weldDetect, mv_lo, mv_hi, maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
             self.canbus.send(msg)
         except can.CanError:
             print("CAN error: - Message NOT sent")
@@ -89,8 +89,8 @@ class CHAdeMO():
         status = 4    # always report connector locked (adapter has no lock at present)
         cv_lo = int(self.chargerVoltage) & 0xFF
         cv_hi = int(self.chargerVoltage) >> 8
-    try:
         msg = can.Message(arbitration_id=0x109, data=[self.evseCHAdeMO_version, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+    try:
         self.canbus.send(msg)
     except can.CanError:
         print("CAN error: - shutting down")
