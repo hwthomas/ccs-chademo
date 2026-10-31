@@ -190,14 +190,14 @@ if __name__ == "__main__":
         startTime_ms = round(time.time()*1000)      # start the local clock
         for line in file:                   # iterate through each line in the file
             if(line[0] == '#'):
-                print(line)                 # print comment line verbatim
+                print(line, end='')         # print comment line verbatim
                 continue                    # and ignore for decoding purposes
                 
             currentTime_ms = round(time.time()*1000)
             local_ts = currentTime_ms - startTime_ms   # local timestamp for CAN message
 
             items = line.split(' ')         # <list> of <space> separated <str>
-            #print("items = ", items)
+            # debug # print("items = ", items)
             id = int(bytes(items[2], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[3], 'utf-8'), 16)     # ditto for data length code (dlc)
             data = bytearray(8)             # build data as <bytearray> of size 8

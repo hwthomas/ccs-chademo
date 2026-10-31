@@ -146,10 +146,10 @@ try:
             local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message printing
             # format timestamp, ID, and dlc first
             c = "{0:.1f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
-            # then append the data bytes with single space separator
+            # then append the 2-digit hex data bytes with a single space separator after each
             for i in range(message.dlc):
                 c +=  "{0:02X} ".format(message.data[i])
-            print(" {}".format(c))    # space separator between fields of each line in log
+            print("{}".format(c))        # print entire message
 
             if(message.arbitration_id == 0x100):    # send message 0x108 after 0x100 received
                 cdm.canSend0x108()  
