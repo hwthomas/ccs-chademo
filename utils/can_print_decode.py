@@ -1,5 +1,5 @@
 #
-# This program reads a CAN log from a file written in can_print format
+# This program readsfrom a log file written in can_print/qc-can_print format
 # and decodes & prints those CAN_IDs that are used in the CHAdeMO 
 # charging sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109)
 # Unrecognised IDs are ignored and not decoded/printed
@@ -68,6 +68,7 @@ class can_decode():
         
         self.chargerVoltage = 0             # CAN-ID 0x109
         self.chargerCurrent = 0
+        
         # end of CHAdeMO test variables
         
 
@@ -179,19 +180,19 @@ if __name__ == "__main__":
 
     # open and read in each line of the CAN log
     # Note: 'line' is a string of the *whole* line, including the separators
-    # eg   " -1688467625313174 102 08 02 9A 01 6D 00 81 8F 00 
+    # eg   " -1688467625313174 102 08 02 9A 01 6D 00 81 8F 00
+    # if the line starts with '#' it is a comment and is skipped
 
-    can_file = sys.argv[1]                  # select short file to read from, or...
-                                            # full file from Dala/EV-CANlogs repo
+    can_file = sys.argv[1]                  # select first argument for log file name
     print("Opening log file ", can_file)
     with open(can_file) as file:
  
-        startTime_ms = round(time.time()*1000)
- 
+        startTime_ms = round(time.time()*1000)      # start the local clock
         for line in file:                   # iterate through each line in the file
-            #print("line = ", line)
-            time.sleep(0.01)                # wait 10mS before next message
-            
+            if(line[0] == '#'):
+                print(line)                 # print comment line verbatim
+                continue                    # and ignore for decoding purposes
+                
             currentTime_ms = round(time.time()*1000)
             local_ts = currentTime_ms - startTime_ms   # local timestamp for CAN message
 
@@ -205,10 +206,9 @@ if __name__ == "__main__":
 
             # generate a CAN message with the parameters read from the log file
             msg = can.Message(timestamp=local_ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
-            # print(msg)                     # for diagnostics only
-
             cdc.cdm_decode(msg)             # decode the message as per LEAF info
 
+            time.sleep(0.01)                # wait 10mS before decoding next message
 
     
     print("finished decoding CAN-log input ")

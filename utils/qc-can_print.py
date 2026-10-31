@@ -3,8 +3,10 @@
 # This is special CAN receive-then-print python program loop for testing the QC-CAN bus on the Leaf Tekna+. 
 # All messages received are formatted and printed out on screen, and replies 0x108 & 0x109 generated.
 # GPIO signals are monitored and output where required for the tests. 
-# For use with Waveshare RS485/CAN boards on the Raspberry Pi, and the RPi.GPIO digital i/o package used.
+# 
+# Comments can be inserted into the log (print("# ")) by starting each comment line with '#'
 #
+# For use with Waveshare RS485/CAN boards on the Raspberry Pi, and the RPi.GPIO digital i/o package used.
 # Make sure Python-CAN is installed first - pip3 install python-can, then 'import can'  as listed below
 # 
 import can
@@ -12,7 +14,7 @@ import RPi.GPIO as GPIO
 import time
 import os
 
-print('\n\rNissan Leaf Tekna+ Quick-Charge (QC-CAN) bus Receive...Print loop program')
+print("# Nissan Leaf Tekna+ Quick-Charge (QC-CAN) bus Receive...Print loop program")
 
 # set up GPIO outputs and inputs for CHAdeMO hardware signals
 GPIO.setmode(GPIO.BOARD)                # set GPIO for board (physical pin) numbering
@@ -30,8 +32,8 @@ inputs = [pin_k]
 for pin in inputs:
     GPIO.setup(pin, GPIO.IN)
 
-print("GPIO inputs and outputs set up")
-print("\nBring up CAN0....")
+print("# GPIO inputs and outputs set up")
+print("# Bring up CAN0....")
 os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
 os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 
@@ -45,10 +47,10 @@ filters = [
 try:
     canbus = can.Bus(channel='can0', interface='socketcan', can_filters=filters, receive_own_messages = True)
 except OSError:
-    print('Cannot find CAN board.')
+    print("# Cannot find CAN board ")
     exit()
 
-print('GPIO and CAN-bus Ready')
+print("# GPIO and CAN-bus Ready ")
 
 # define a class with variables for the CHAdeMO 'charger' parameters
 class CHAdeMO():
@@ -79,7 +81,7 @@ class CHAdeMO():
         try:
             self.canbus.send(msg)
         except can.CanError:
-            print("CAN error: - Message NOT sent")
+            print("# CAN error: - Message NOT sent")
             self.canbus.shutdown()
             exit()
     
@@ -93,32 +95,31 @@ class CHAdeMO():
         try:
             self.canbus.send(msg)
         except can.CanError:
-            print("CAN error: - shutting down")
+            print("# CAN error: - shutting down")
             self.canbus.shutdown()
             exit()
      
     # define GPIO API for d1/SS1, d2/SS hardware interlocks and evChargePermit
     def setSS1_On(self):
-        print("Switching Charge Signal SS1 ON")
+        print("# Switching Charge Signal SS1 ON")
         self.GPIO.output(pinSS1, GPIO.HIGH)
 
     def setSS1_Off(self):
-        print("Switching Charge Signal SS1 OFF")
+        print("# Switching Charge Signal SS1 OFF")
         self.GPIO.output(pinSS1, GPIO.LOW)
  
     def setSS2_On(self):
-        print("Switching Charge Signal SS2 ON.")
+        print("# Switching Charge Signal SS2 ON")
         self.GPIO.output(pinSS2, GPIO.HIGH)
 
-    def setSS2_Off(self):
-        print("Switching Charge Signal SS2 OFF")
+    def setSS# Switching Charge Signal SS2 OFF")
         self.GPIO.output(pinSS2, GPIO.LOW)
 
     def readEVchargePermit(self):               # read GPIO input when called
         new_value = not self.GPIO.input(pin_k)  # pin_k is active(LOW)
         if(new_value != self.evChargePermit):
             self.evChargePermit = new_value     # update via mainfunction scan only
-            print("GPIO.pin_k evChargePermit = {0:02X}".format(self.evChargePermit))
+            print(# GPIO.pin_k evChargePermit = {0:02X}".format(self.evChargePermit))
 
 pass    # end of class CHAdeMO
 
@@ -126,12 +127,12 @@ pass    # end of class CHAdeMO
 
 try:
     cdm = CHAdeMO()                                 # create CHAdeMO class and local variables
-    startTime_ms = round(time.time()*1000)          # startTime for message loop
+    startTime_ms = round(time.time()*1000)          # start the clock
     for i in range(0, 660):             # loop for ~20+ Sec at ~31mS per scan
         # GPIO and CAN-bus updates
         cdm.readEVchargePermit()        # poll EVchargePermit GPIO input (signal k) on each scan
-        if(i == 5):
-            cdm.setSS1_On()             # after ~150mS enable CAN comms on EV
+        if(i == 3):
+            cdm.setSS1_On()             # after ~100mS enable CAN comms on EV
         if(i == 150):
             cdm.setSS2_On()             # after ~05secs enable EV contactors
         if(i == 500):
@@ -144,7 +145,7 @@ try:
             currentTime_ms = round(time.time()*1000)    # update current time
             local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message printing
             # format timestamp, ID, and dlc first
-            c = "{0:f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
+            c = "{0:.1f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
             # then append the data bytes with single space separator
             for i in range(message.dlc):
                 c +=  "{0:02X} ".format(message.data[i])
@@ -160,8 +161,8 @@ try:
 
 except KeyboardInterrupt:
     # Catch keyboard interrupt
-    print('\n\rKeyboard interrupt') 
+    print("# Keyboard interrupt") 
 
-print('\n\rShutting bus and CAN0 down') 
+print("# Shutting bus and CAN0 down") 
 canbus.shutdown()
 os.system("sudo /sbin/ip link set can0 down")
