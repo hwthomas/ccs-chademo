@@ -112,14 +112,15 @@ class CHAdeMO():
         print("# Switching Charge Signal SS2 ON")
         self.GPIO.output(pinSS2, GPIO.HIGH)
 
-    def setSS# Switching Charge Signal SS2 OFF")
+    def setSS2_Off(self):
+        print("# Switching Charge Signal SS2 OFF")
         self.GPIO.output(pinSS2, GPIO.LOW)
 
     def readEVchargePermit(self):               # read GPIO input when called
         new_value = not self.GPIO.input(pin_k)  # pin_k is active(LOW)
         if(new_value != self.evChargePermit):
             self.evChargePermit = new_value     # update via mainfunction scan only
-            print(# GPIO.pin_k evChargePermit = {0:02X}".format(self.evChargePermit))
+            print("# GPIO.pin_k evChargePermit = {0:02X}".format(self.evChargePermit))
 
 pass    # end of class CHAdeMO
 
