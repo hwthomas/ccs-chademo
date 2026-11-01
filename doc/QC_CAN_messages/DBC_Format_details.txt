@@ -1,0 +1,54 @@
+From https://https://www.csselectronics.com/pages/can-dbc-file-database-intro
+
+Simple DBC Messag
+
+A simple DBC message contains the Message_ID (MID), and at least one signal. Let's demonstrate by 
+showing a message that contains a single 8-bit signal. Spaces and the syntax is really strict, so if 
+you get a single space incorrect, the auto-generation script will likely fail.
+
+BO_ 500 IO_DEBUG: 4 IO
+ SG_ IO_DEBUG_test_unsigned : 0|8@1+ (1,0) [0|0] "" DBG
+ 
+    • The message name is IO_DEBUG and MID is 500 (decimal), and the length is 4 byt
+      (though we only need 1 for 8-bit signal). 
+      Data bytes arrive d0 (bits 0-7) first, d1 (bits 8-15) next, and so on up to d3 (bits16-23)
+    • The sender is IO
+    • 0|8: The unsigned signal starts at bit position 0, and the size of this signal is 8
+    • (1,0): The scale and offset (discussed later)
+    • [0|0]: Min and Max is not defined (discussed later)
+    • "": There are no units (it could be, for instance "inches")  
+    • @1+: Defines that the signal is little-endian, and unsigned: Never change this!
+
+Note on big-endian (Motorola/network) byte format.  See (eg) ID x100 maximumBatteryVoltage (QC_CAN) :-
+
+SG_ maximumBatteryVoltage : 39|16@0+ (0.01,0) [0|600] "volts" Vector__XXX
+
+data bytes are    d0     d1     d2     d3     d4     d5     d6     d7
+bit numbers      00-07  08-15  16-23  24-31  32-39  40-47  48-55  56-63
+
+The signal is in data[4] and data[5], bits 32-39 and 40-47. High byte (d4) arrives first, 
+low byte (d5) second. The DBC file indicates this by listing the BitPos as 39|16@0+ 
+(which seems a bit odd: - why not  BitPos 32?)
+
+Note: This signal has been changed (1st Jun 2026) and is now Intel (little-endian) !
+
+Signed Signal
+A signed signal can be sent by simply applying a negative offset to a signal. 
+Let's add a signed signal to the previous message.
+
+BO_ 500 IO_DEBUG: 4 IO
+ SG_ IO_DEBUG_test_unsigned : 0|8@1+ (1,0) [0|0] "" DBG
+ SG_ IO_DEBUG_test_signed : 8|8@1- (1,-128) [0|0] "" DBG
+ 
+Fractional Signals (float)
+A floating point variable can be sent by deciding the range, and the precision that you require. 
+For example, if we choose 8-bits, with 0.1 as a fraction, we can send the data range of 0.0 -> 25.5. 
+On the other hand, if we want more precision and negative representation, we could use 12-bits 
+with 0.01 as a fraction, and an offset. The second fractional signal also contains an explicit 
+minimum and maximum, which is limited by 12-bit that can represent 4096 different numbers, 
+and by factoring in the offset, and using half of the range for negative representation, it ends up 
+with the limited range of -20.48 -> 20.47
+
+BO_ 500 IO_DEBUG: 4 IO
+ SG_ IO_DEBUG_test_unsigned : 0|8@1+ (1,0) [0|0] "" DBG
+ SG_ IO_DEBUG_test_signed : 8|8@1- (1,-128) [0|0] "" DBG
