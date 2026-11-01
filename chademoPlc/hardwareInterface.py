@@ -45,7 +45,7 @@ if (getConfigValue("charge_parameter_backend")=="chademo"):
        {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
     try:
-        canbus = can.Bus(interface='socketcan', channel="can0", can_filters = filters, receive_own_messages = True)
+        canbus = can.Bus(interface="socketcan", channel="can0", can_filters = filters, receive_own_messages = True)
     except OSError:
         print('Cannot find CAN board.')
         exit
@@ -125,25 +125,25 @@ class hardwareInterface():
 #  be activated in the fsmCdM code at appropriate points
 #
     def setSS1_On(self):
-        self.addToTrace("Switching Charge Signal SS1 ON.")
+        self.addToTrace("Switching Charge Signal SS1 ON")
         if (getConfigValue("digital_output_device")=="rpi_gpio"):
             GPIO.output(pinSS1, GPIO.HIGH)
         self.outvalue |= 2
 
     def setSS1_Off(self):
-        self.addToTrace("Switching Charge Signal SS1 OFF.")
+        self.addToTrace("Switching Charge Signal SS1 OFF")
         if (getConfigValue("digital_output_device")=="rpi_gpio"):
             GPIO.output(pinSS1, GPIO.LOW)
         self.outvalue &= ~2
  
     def setSS2_On(self):
-        self.addToTrace("Switching Charge Signal SS2 ON.")
+        self.addToTrace("Switching Charge Signal SS2 ON")
         if (getConfigValue("digital_output_device")=="rpi_gpio"):
             GPIO.output(pinSS2, GPIO.HIGH)
         self.outvalue |= 4
 
     def setSS2_Off(self):
-        self.addToTrace("Switching Charge Signal SS2 OFF.")
+        self.addToTrace("Switching Charge Signal SS2 OFF")
         if (getConfigValue("digital_output_device")=="rpi_gpio"):
             GPIO.output(pinSS2, GPIO.LOW)
         self.outvalue &= ~4
@@ -351,12 +351,12 @@ class hardwareInterface():
 
         # The following class variables are for comms to/from the CHAdeMO EV
         # some are initialised to valid values because they may be used before CAN has been updated
-        self.cdmVersion = 1                 # initial EVSE CHAdeMO version (0=0.9, 1=1.0/.1/.2, 2=2+)
+        self.cdmVersion = 1                 # initial EVSE CHAdeMO version (0= <0.9, 1=0.9/1.0/1.1, 2=1.2/2+)
  
         # EV tells the charger the maximum volts it 'needs' via CAN-ID 0x100
         self.minChargerCurrent = None       # CAN-ID 0x100 
         self.minBatteryVoltage = None       
-        self.maxBatteryVoltage = 0          # initialise to valid value
+        self.maxBatteryVoltage = 0          # initialise to valid values
         self.socPercentFactor = 100
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101
@@ -373,7 +373,7 @@ class hardwareInterface():
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
         # Charger tells the EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
-        self.WeldingDetection = 0           # CAN-ID 0x108 - charger supports EV welding detection       
+        self.weldingDetection = 0           # CAN-ID 0x108 - charger supports EV welding detection       
         self.maxChargerVoltage = 0          # then its Maximum Available values
         self.maxChargerCurrent = 0  
         self.thresholdVoltage = 0           # this is the maximum it will use (for protection of the EV)
@@ -554,7 +554,7 @@ class hardwareInterface():
         self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
         th_lo = int(self.thresholdVoltage) & 0xFF
         th_hi = int(self.thresholdVoltage) >> 8
-        msg = can.Message(arbitration_id=0x108, data=[0, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        msg = can.Message(arbitration_id=0x108, data=[self.weldingDetection, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
     
     # send CAN message 0x109 to the EV with charging loop actual values (chargerVoltage, chargeCurrent)
@@ -659,9 +659,9 @@ class hardwareInterface():
 
             if(message.arbitration_id == 0x108):    # we don't normally receive 0x108, only send via setChargerParameters
                 new_value = message.data[0]
-                if(self.evseSeqState108 != new_value):
-                    self.addToTrace("ID 0x108: evseSequenceState = %X" % new_value)
-                    self.evseSeqState108 = new_value
+                if(self.weldingDetection != new_value):
+                    self.addToTrace("ID 0x108: weldingDetection = %X" % new_value)
+                    self.weldingDetection = new_value
                      
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.maxChargerVoltage != new_value):
@@ -680,9 +680,9 @@ class hardwareInterface():
 
             if(message.arbitration_id == 0x109):    # we don't normally receive 0x109, only send via canSend0x109 message
                 new_value = message.data[0]
-                if(self.evseSeqState109 != new_value):
-                    self.addToTrace("ID 0x109: evseSequenceState = %X" % new_value)
-                    self.evseSeqState109 = new_value
+                if(self.evseCdMversion != new_value):
+                    self.addToTrace("ID 0x109: evseCdMversion = %X" % new_value)
+                    self.evseCdMversion = new_value
                     
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
@@ -733,14 +733,15 @@ if __name__ == "__main__":
         # simulate fast shutdown by setting output current filter to a fast rate if zero current is requested
         global voltage_out, current_out
         # get the volts and amps inputs from the EV values requested in message 0x102
-        voltage_in = hw.targetBatteryVoltage
-        current_in = hw.chargeCurrentRequest
-        # process the volts & amps requests with a first-order filter
-        voltage_out = voltage_out * 0.9 + volts_in * 0.1
+        voltage_in = hw.targetBatteryVoltage    # Note: this stays constant throughout charging, 
+        current_in = hw.chargeCurrentRequest    # but actual volts will depend on actual current and battery volts
+        # process the current requests with a first-order filter
         if(current_in == 0):   # more rapid (ish) shutdown
             current_out = current_out * 0.2 + current_in * 0.8
         else:
             current_out = current_out * 0.9 + current_in * 0.1
+        # estimate the voltage from battery volts + (current * internal resistance)
+        voltage_out = voltage_in            # fix this later!
         # now update the EV with these values, which get sent to EV via message 0x109 on next scan
         hw.setChargerVoltageAndCurrent(int(voltage_out), int(current_out))
         
