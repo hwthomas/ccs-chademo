@@ -3,11 +3,14 @@ to correct the StateOfCharge (SOC%) and change all Motorola (big-endian) to Inte
 for 16-bit data values.  The scaling applied to the 16-bit values has also been changed from 0.01
 to 1, which seems to be correct for the new little-endian format (from old log examples).
 
-These changes have now been applied to the expanded CAN-IDs in file CAN_ID_100-109.txt.
+These changes have now been applied to the expanded CAN-IDs in file CAN_ID_100-109.txt
 
 
-AI reply re CAN:-
+Note re CAN ‘chargeSequence’ codes 0x20, 0x26, 0x29, 0x31, 0x37, 0x38 :-
 
-the vehicle does not transmit or receive these specific codes on CAN-IDs 0x108 or 0x100. 
-Instead, the sequence states follow a strict master-slave protocol split between specific
-vehicle and charger CAN frames.
+These codes (which seem not be used in the latest ZE1+ Leaf) are/were used to indicate the current charging
+sequence state(s) of the EV and EVSE, and provide a software ‘handshake’ between the charger and car.
+The analogue handshakes on CHAdeMO pin 2 (signal d1/SS1 - Charge Enable from EVSE to EV), Charge Permit on 
+CHAdeMO pin 4 (signal ‘k’ from EV to EVSE), and Charge Signal 2 (d2/SS2) on pin 10 – enable EV contactors) 
+seem instead to be an adequate interlock, and are the CHAdeMO standard, whereas the CAN chargeSequenceCodes
+are manufacturer-specific (Nissan original use), and may differ for other car makes
