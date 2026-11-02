@@ -21,7 +21,7 @@ os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")
 time.sleep(0.1) 
 
 try:
-    bus = can.Bus(channel='can0', interface='socketcan', can_filters=None, receive_own_messages = True)    # allow all CAN-IDs
+    bus = can.Bus(channel="can0", interface="socketcan", can_filters=None, receive_own_messages = True)    # allow all CAN-IDs
 except OSError:
     print("# Cannot find CAN board.")
     exit()
@@ -35,15 +35,13 @@ try:
 
         currentTime_mS = round(time.time()*1000)    # update current time
         local_ts = currentTime_mS - startTime_mS    # local timestamp for CAN message
-        
-        # format timestamp, ID, and dlc first
+        # build format string: timestamp, ID, and dlc first
         c = "{0:.1f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
         # then append the 2-digit hex data bytes with a single space separator after each
         for i in range(message.dlc):
             c +=  "{0:02X} ".format(message.data[i])
+        print("{}".format(c))        # print entire message from format string
 
-        print("{}".format(c))    # space separator between fields of each line in log
-    
         # pause 10mS, then loop for next message or until Ctrl-C
         time.sleep(0.01) 
 

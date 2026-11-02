@@ -1,21 +1,22 @@
 #
 # This program readsfrom a log file written in can_print/qc-can_print format
-# and decodes & prints those CAN_IDs that are used in the CHAdeMO 
-# charging sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109)
-# Unrecognised IDs are ignored and not decoded/printed
+# and decodes & prints those CAN_IDs that are used in the CHAdeMO charging
+# sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109). Unrecognised IDs are ignor
+# and not decoded/printed.
 #
-# !!! It is a special version of log_decode which reads can_print logs only !!!
+# It is a special version of log_decode which reads can_print logs only
 #
 # the log file to be decoded is read as command-line argument[1] 
-# ie run command:- 'python log_decode.py short.log'
+# ie run command:- 'python log_decode.py leaf.log'
 #
-# below is a short log file 'leaf.log' extracted from a can_print.py generated log
+# below is a short extract from a can_print.py generated log...
 #
-#   Timestamp uS     ID   ext         data[0..7] as hex bytes
-# -1688467625333184 100 08 06 00 00 00 B3 01 FF 00
-# -1688467625323152 101 08 00 E4 00 00 00 00 00 00
-# -1688467625313174 102 08 02 9A 01 6D 00 81 8F 00 ,
-
+#  Timestamp uS    ID  dlc  data[0..7] as hex bytes
+#     [0]          [1][2][3][4][5][6][7][8][9][10]
+#-1688467625333184 100 08 06 00 00 00 B3 01 FF 00
+#-1688467625323152 101 08 00 E4 00 00 00 00 00 00
+#-1688467625313174 102 08 02 9A 01 6D 00 81 8F 00 
+#
 import can      # for message structure  
 import time     # for sleep and timings
 import sys
@@ -46,27 +47,34 @@ class can_decode():
         # config file on every call. Must be set before any addToTrace() call,
         # so it stays right at the top of __init__.
         self.traceEnabled = getConfigValueBool("evse_printtrace")
+        
+        # the trace timestamp is carried over from the original message timestamp
+        self.time_stamp = 0
        
         # The following class variables are for testing the CHAdeMO hardware
         self.minChargeCurrent = -1          # CAN-ID 0x100
         self.minBatteryVoltage = -1
         self.maxBatteryVoltage = -1
-        self.chargeRateIndication = -1
+        self.socPercentFactor = -1
         
         self.maxChargeTime = -1             # CAN-ID 0x101
         self.estChargeTime = -1
         self.ratedCapacitykWh = -1
             
-        self.targetBatteryVoltage = -1      # CAN-ID 0x102
+        self.evCdMversion = 0               # CAN-ID 0x102 EV CHAdeMO version (0=0.9, 1=1.0/1.1/1.2, 2=2+)
+        self.targetBatteryVoltage = -1
         self.chargeCurrentRequest = -1
         self.evFaultBits = -1
         self.evStatusBits = -1
         self.evStateOfCharge = -1
         
-        self.maxChargerVoltage = 0          # CAN-ID 0x108
+        self.weldingDetection = 0           # CAN-ID 0x108 - charger supports EV welding detection       
+        self.maxChargerVoltage = 0
         self.maxChargerCurrent = 0
+        self.thresholdVoltage = 0           # this is the maximum it will use (for protection of the EV)
         
-        self.chargerVoltage = 0             # CAN-ID 0x109
+        self.evseCdMversion = 0             # CAN-ID 0x109 - charger CHAdeMO version supported 
+        self.chargerVoltage = 0
         self.chargerCurrent = 0
         
         # end of CHAdeMO test variables
@@ -80,7 +88,8 @@ class can_decode():
         # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
        
         if message:
-            if message.arbitration_id == 0x100:
+
+            if message.arbitration_id == 0x100:                 # CAN-ID 0x100
                 new_value = message.data[0]
                 if self.minChargeCurrent != new_value:
                     self.addToTrace("0x100: minChargeCurrent = %d A" % new_value)
@@ -96,18 +105,35 @@ class can_decode():
                     self.addToTrace("0x100: maxBatteryVolts = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
-            if message.arbitration_id == 0x101:
-                new_value = (message.data[1]) * 10/60
+                new_value = message.data[6]
+                if(self.socPercentFactor != new_value):
+                    self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                    self.socPercentFactor = new_value
+
+
+            if message.arbitration_id == 0x101:                 # CAN-ID 0x101
+                new_value = message.data[2]
                 if(self.maxChargeTime != new_value):
                     self.addToTrace("0x101: maxChargeTime = %d mins" % new_value)
                     self.maxChargeTime = new_value
 
-                new_value = int(message.data[5]) + int(message.data[6])*256
+                new_value = message.data[3]
+                if(self.estChargeTime != new_value):
+                    self.addToTrace("0x101: estChargeTime = %d mins" % new_value)
+                    self.estChargeTime = new_value
+
+                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
                 if(self.ratedCapacitykWh != new_value):
                     self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
                     
-            if message.arbitration_id == 0x102:
+
+            if message.arbitration_id == 0x102:                 # CAN-ID 0x102
+                new_value = message.data[0]
+                if(self.evCdMversion != new_value):             # EV CHAdeMO version
+                    self.addToTrace("0x102 evCdMversion = %X" % new_value)
+                    self.evCdMversion = new_value
+                    
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
                     self.addToTrace("0x102: targetBatteryVoltage = %d V" % new_value)
@@ -130,10 +156,16 @@ class can_decode():
 
                 new_value = message.data[6]
                 if(self.evStateOfCharge != message.data[6]):
-                    self.addToTrace("0x102: evStateOfCharge = %d" % new_value)
+                    self.addToTrace("0x102: evStateOfCharge = %d %%" % new_value)
                     self.evStateOfCharge = new_value
 
-            if message.arbitration_id == 0x108:
+
+            if message.arbitration_id == 0x108:                 # CAN-ID 0x108
+                new_value = message.data[0]
+                if(self.weldingDetection != new_value):
+                    self.addToTrace("0x108: weldingDetection = %X " % new_value)
+                    self.weldingDetection = new_value
+
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.maxChargerVoltage != new_value):
                     self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
@@ -144,7 +176,18 @@ class can_decode():
                     self.addToTrace("0x108: maxChargerCurrent = %d A" % new_value)
                     self.maxChargerCurrent = new_value
 
-            if message.arbitration_id == 0x109:
+                new_value = int(message.data[4]) + int(message.data[5])*256
+                if(self.thresholdVoltage != new_value):
+                    self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
+                    self.thresholdVoltage = new_value
+
+
+            if message.arbitration_id == 0x109:                 # CAN-ID 0x109
+                new_value = message.data[0]
+                if(self.evseCdMversion != new_value):           # EVSE CHAdeMO version
+                    self.addToTrace("0x109 evseCdMversion = %X" % new_value)
+                    self.evseCdMversion = new_value
+                    
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
                     self.addToTrace("0x109: chargerVoltage = %d V" % new_value)
@@ -163,12 +206,11 @@ pass    # end of can_decode class
 
 # These logging and status functions used as defaults when can_decode class instance created
 
-startTime_ms = round(time.time()*1000)
+cdc_timestamp = 0       # this is copied from the logfile timestamp, and is in mS
 
 def cdcAddToTrace(s):
-    currentTime_ms = round(time.time()*1000)
-    dT_ms = currentTime_ms - startTime_ms
-    print("[" + str(dT_ms) + "ms] " + s)
+    ts_mS = cdc_timestamp
+    print("[" + str(ts_mS) + "ms] " + s)
 
 def cdcShowStatus(s, selection=""):
     pass
@@ -180,32 +222,30 @@ if __name__ == "__main__":
 
     # open and read in each line of the CAN log
     # Note: 'line' is a string of the *whole* line, including the separators
-    # eg   " -1688467625313174 102 08 02 9A 01 6D 00 81 8F 00
-    # if the line starts with '#' it is a comment and is skipped
+    # eg   "-1688467625313174 102 08 02 9A 01 6D 00 81 8F 00"
+    # if a line starts with '#' it is a comment and is added to the trace, then skipped
 
     can_file = sys.argv[1]                  # select first argument for log file name
     print("Opening log file ", can_file)
     with open(can_file) as file:
- 
-        startTime_ms = round(time.time()*1000)      # start the local clock
         for line in file:                   # iterate through each line in the file
-            if(line[0] == '#'):
-                print(line, end='')         # print comment line verbatim
-                continue                    # and ignore for decoding purposes
-                
-            currentTime_ms = round(time.time()*1000)
-            local_ts = currentTime_ms - startTime_ms   # local timestamp for CAN message
-
             items = line.split(' ')         # <list> of <space> separated <str>
-            # debug # print("items = ", items)
-            id = int(bytes(items[2], 'utf-8'), 16)      # extract arbitration id as an <int>
-            dlc = int(bytes(items[3], 'utf-8'), 16)     # ditto for data length code (dlc)
-            data = bytearray(8)             # build data as <bytearray> of size 8
-            for i in range(4,11):           # log file has data[8] in bytes 0..7
-                data[i-4] = int(items[i], 16)   # convert items to hex integers
+            is_comment = items[0] == '#'    # check first character of first item in line
+            if is_comment:
+                comment = line.rstrip('\n') # remove last '\n'
+                cdc.addToTrace(comment)     # print comment less final '\n'
+                continue                    # and ignore for decoding purposes
 
-            # generate a CAN message with the parameters read from the log file
-            msg = can.Message(timestamp=local_ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
+            ts = items[0]                   # extract timestamp from log file item
+            id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
+            dlc = int(bytes(items[2], 'utf-8'), 16)     # ditto for data length code (dlc)
+            data = bytearray(8)             # build data as <bytearray> of size 8
+            for i in range(3,10):           # log file has data[0-7] in bytes [3-10]
+                data[i-3] = int(items[i], 16)   # convert items to hex integers
+
+            # generate a CAN message with the timestamp and parameters read from the log file
+            msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
+            cdc_timestamp = ts              # copy log timestamp locally for trace function cdcAddToTrace above
             cdc.cdm_decode(msg)             # decode the message as per LEAF info
 
             time.sleep(0.01)                # wait 10mS before decoding next message

@@ -45,7 +45,7 @@ filters = [
     {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
     {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
 try:
-    canbus = can.Bus(channel='can0', interface='socketcan', can_filters=filters, receive_own_messages = True)
+    canbus = can.Bus(channel="can0", interface="socketcan", can_filters=filters, receive_own_messages = True)
 except OSError:
     print("# Cannot find CAN board ")
     exit()
@@ -145,12 +145,12 @@ try:
         if message:
             currentTime_ms = round(time.time()*1000)    # update current time
             local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message printing
-            # format timestamp, ID, and dlc first
+            # build format string: timestamp, ID, and dlc first
             c = "{0:.1f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
             # then append the 2-digit hex data bytes with a single space separator after each
             for i in range(message.dlc):
                 c +=  "{0:02X} ".format(message.data[i])
-            print("{}".format(c))        # print entire message
+            print("{}".format(c))        # print entire message from format string
 
             if(message.arbitration_id == 0x100):    # send message 0x108 after 0x100 received
                 cdm.canSend0x108()  

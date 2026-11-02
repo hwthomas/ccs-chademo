@@ -1,4 +1,4 @@
-$ python qc-can_print.py
+# python qc-can_print.py
 # Nissan Leaf Tekna+ Quick-Charge (QC-CAN) bus Receive...Print loop program
 # GPIO inputs and outputs set up
 # Bring up CAN0....
@@ -632,4 +632,4 @@ $ python qc-can_print.py
 19145.0 102 08 02 9A 01 00 00 9C 10 00 
 19175.0 108 08 01 FE 01 87 B3 01 00 00 
 19206.0 100 08 06 00 00 00 B3 01 64 00 
-# CAN error: - Message NOT sent
+# CAN error: - Message NOT sent 
