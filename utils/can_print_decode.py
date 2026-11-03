@@ -249,6 +249,6 @@ if __name__ == "__main__":
             cdc.cdm_decode(msg)             # decode the message as per LEAF info
 
             time.sleep(0.01)                # wait 10mS before decoding next message
-
+        pass                            # end of for loop
     
     print("finished decoding CAN-log input ")
