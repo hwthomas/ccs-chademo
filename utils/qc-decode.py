@@ -1,10 +1,10 @@
 #
-# This program readsfrom a log file written in can_print/qc-can_print format
+# This program readsfrom a log file written in can_print/qc-print format
 # and decodes & prints those CAN_IDs that are used in the CHAdeMO charging
-# sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109). Unrecognised IDs are ignor
-# and not decoded/printed.
+# sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109). Unrecognised IDs are ignored
+# and not decoded.
 #
-# It is a special version of log_decode which reads can_print logs only
+# It is a special version of log_decode which reads can_print/qc-print logs only
 #
 # the log file to be decoded is read as command-line argument[1] 
 # ie run command:- 'python log_decode.py leaf.log'
@@ -216,7 +216,7 @@ def cdcShowStatus(s, selection=""):
     pass
 
 if __name__ == "__main__":
-    print("Testing log_decode using CAN-log file for  input...")
+    print("Decoding can-print.log or qc-print.log file as  input...")
     # create a can_decode instance, using cbAddToTrace and cbShowStatus functions above
     cdc = can_decode(cdcAddToTrace, cdcShowStatus)
 
@@ -236,7 +236,7 @@ if __name__ == "__main__":
                 cdc.addToTrace(comment)     # print comment less final '\n'
                 continue                    # and ignore for decoding purposes
 
-            ts = items[0]                   # extract timestamp from log file item
+            ts = items[0]                   # extract timestamp from (non-comment) log file item
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[2], 'utf-8'), 16)     # ditto for data length code (dlc)
             data = bytearray(8)             # build data as <bytearray> of size 8

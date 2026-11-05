@@ -3,7 +3,7 @@
 # This is simple CAN receive-then-print python program loop. 
 # All messages received are printed out on screen.
 # Comment lines may be inserted by printing them starting with a'#',
-# and they are then ignored by the can_print_decode.py program
+# and they are then ignored by the can_decode.py program
 #
 # For use with Waveshare RS485/CAN boards on the Raspberry Pi
 #
@@ -14,7 +14,7 @@ import can
 import time
 import os
 
-print("# CAN Rx...Print loop")
+print("# CAN Rx...Print loop for *all* CAN-IDs on the bus")
 print("# Bring up CAN0....")
 os.system("sudo /sbin/ip link set can0 down")    # Prevent 'Busy' error if already UP
 os.system("sudo /sbin/ip link set can0 up type can bitrate 500000")

@@ -54,11 +54,13 @@ class can_decode():
         self.evStatusBits = None
         self.evStateOfCharge = None
 
-        self.maxChargerVoltage = None       # CAN-ID 0x108
+        self.weldingDetection = None        # CAN-ID 0x10
+        self.maxChargerVoltage = None
         self.maxChargerCurrent = None
         self.thresholdVoltage = None        # threshold voltage for EV protection
         
-        self.chargerVoltage = None          # CAN-ID 0x109
+        self.evseCdMversion = None          # CAN-ID 0x109     
+        self.chargerVoltage = None
         self.chargerCurrent = None
 
         # end of CHAdeMO test variables
@@ -129,6 +131,11 @@ class can_decode():
                         self.evStateOfCharge = new_value
 
             if message.arbitration_id == 0x108:
+                new_value = message.data[0]
+                if(self.weldingDetection != new_value):
+                    self.addToTrace("0x108: weldingDetection = %X " % new_value)
+                    self.weldingDetection = new_value
+
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.maxChargerVoltage != new_value):
                     self.addToTrace("ID 0x108: maxChargerVoltage = %d V" % new_value)
@@ -141,10 +148,15 @@ class can_decode():
 
                 new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.thresholdVoltage != new_value):
-                    self.addToTrace("ID 0x108: ThresholdVoltage = %d V" % new_value)
+                    self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
                     self.thresholdVoltage = new_value
 
             if message.arbitration_id == 0x109:
+                new_value = message.data[0]
+                if(self.evseCdMversion != new_value):           # EVSE CHAdeMO version
+                    self.addToTrace("0x109 evseCdMversion = %X" % new_value)
+                    self.evseCdMversion = new_value
+                    
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
                     self.addToTrace("ID 0x109: actual charger Voltage = %d V" % new_value)
