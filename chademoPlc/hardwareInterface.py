@@ -368,7 +368,7 @@ class hardwareInterface():
         self.chargeCurrentRequest = 0
         self.evFaultBits = None
         self.evStatusBits = 0
-        self.evStateOfCharge = None
+        self.evStateOfCharge = 50
 
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
