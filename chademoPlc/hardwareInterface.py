@@ -756,8 +756,7 @@ if __name__ == "__main__":
     # monitored for timeouts, etc.  Initially, the loop is set to run for 1000 mainfunction scans at ~31mS/scan
     # which is approximately 20secs. Inject comments into log by printing comments starting with '#'
     try:
-        for i in range(0, 660)      
-            # poll hardware interface, updating CAN-bus variables to/from the EV on each scan
+        for i in range(0, 660):      
             print("# Start polling hardwareInterface to read GPIO inputs and wait for EV CAN-bus to start")
             hw.mainfunction()
             
