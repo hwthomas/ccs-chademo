@@ -568,7 +568,7 @@ class hardwareInterface():
             self.chargerCurrent = int(self.chargerCurrent * 0.9 + current_in * 0.1)
         # estimate the voltage from battery volts + (current * internal resistance)
         internalResistance = 0.5       # empirical value based on EV max power output
-        self.chargerVoltage = estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.chargerCurrent
+        self.chargerVoltage = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.chargerCurrent
         # the EV will be updated with these values when message 0x109 is sent on next scan
 
     # send CAN message 0x108 to the EV with the Charger parameters (self.maxChargerVoltage, self.maxChargerCurrent)
