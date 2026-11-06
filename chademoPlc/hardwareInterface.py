@@ -757,8 +757,10 @@ if __name__ == "__main__":
     # which is approximately 20secs. Inject comments into log by printing comments starting with '#'
     try:
         for i in range(0, 660):      
-            print("# Start polling hardwareInterface to read GPIO inputs and wait for EV CAN-bus to start")
-            hw.mainfunction()
+            hw.mainfunction()       # poll hardwareInterface on each scan
+            
+            if (i==0):              # print heading at start of log
+                print("# Start polling hardwareInterface to read GPIO inputs and wait for EV CAN-bus to start")
             
             # now change parameters at specific times of the charging cycle
             if (i==3):              # after ~100mS...
