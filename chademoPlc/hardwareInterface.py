@@ -353,34 +353,34 @@ class hardwareInterface():
         # some are initialised to valid values because they may be used before CAN has been updated
         self.cdmVersion = 1                 # initial EVSE CHAdeMO version (0= <0.9, 1=0.9/1.0/1.1, 2=1.2/2+)
  
-        # EV tells the charger the maximum volts it 'needs' via CAN-ID 0x100
+        # EV tells the charger the maximum voltage and current it 'needs' via CAN-ID 0x100
         self.minChargerCurrent = None       # CAN-ID 0x100 
         self.minBatteryVoltage = None       
         self.maxBatteryVoltage = 0          # initialise to valid values
         self.socPercentFactor = 100
 
-        self.maxChargeTimeMins = None       # CAN-ID 0x101
+        self.maxChargeTimeMins = None       # CAN-ID 0x101 (calculated by EV)
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
 
         self.evCdMversion = 0               # CAN-ID 0x102 EV CHAdeMO version (0=0.9, 1=1.0/.1/.2, 2=2+)
         self.targetBatteryVoltage = 0       # charging loop voltage and current requests
         self.chargeCurrentRequest = 0
-        self.evFaultBits = None
-        self.evStatusBits = 0
-        self.evStateOfCharge = 50
+        self.evFaultBits = None             # EV fault bits
+        self.evStatusBits = 0               # EV status bits
+        self.evStateOfCharge = 50           # will be passed to charger emulation
 
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
         # Charger tells the EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
         self.weldingDetection = 0           # CAN-ID 0x108 - charger supports EV welding detection       
-        self.maxChargerVoltage = 0          # then its Maximum Available values
+        self.maxChargerVoltage = 0          # then its Maximum Available values (fixed for each charger)
         self.maxChargerCurrent = 0  
-        self.thresholdVoltage = 0           # this is the maximum it will use (for protection of the EV)
+        self.thresholdVoltage = 0           # this is the maximum charger will use (for protection of the EV)
 
         self.evseCdMversion = 0             # CAN-ID 0x109 - charger CHAdeMO version supported 
         self.chargerVoltage = 0             # actual voltage and current being delivered in response
-        self.chargerCurrent = 0             # to the EV 0x102 requests while in the charging loop
+        self.chargerCurrent = 0             # to the EV 0x102 requests while in the (emulated) charging loop
 
         # end of CHAdeMO current variables
 
@@ -603,6 +603,7 @@ class hardwareInterface():
         #
         if message:
             self.canActive = True       # something is happening on the EV CAN-bus...
+            # Decode these CHAdeMO messages to update the EV variables, and send back emulatedCharger values
             if message.arbitration_id == 0x100:
                 new_value = message.data[0]
                 if self.minChargerCurrent != new_value:
@@ -625,7 +626,6 @@ class hardwareInterface():
                     self.socPercentFactor = new_value
 
                 # after 0x100 received, update charger parameters and send to the EV via ID 0x108 for validation
-                # !!! where are these being set from?  is the simulated charger response being updated? !!!
                 self.setChargerParameters(self.maxBatteryVoltage, self.maxChargerCurrent)
                 self.canSend0x108() 
 
@@ -743,17 +743,17 @@ if __name__ == "__main__":
     # to the EV to observe functional changes and timings as they occur. Once these have been observed
     # and understood (and documented!) a simpler test function can be used
     
-    print("Testing hardwareInterface for ~30s...")
+    print("Testing hardwareInterface for ~20s...")
     # create instance of hardwareInterface
     hw = hardwareInterface(hwAddToTrace)
     hw.plugged_in = True                    # charging session starts
     hw.setChargerParameters(500, 135)       # set up typical charger Max (available) volts and amps
                                             # these values are sent to EV via 0x108 after 0x100 is received
-    hw.setChargerVoltageAndCurrent(0, 0)    # set actual HV voltage & current to zero
+    hw.setChargerVoltageAndCurrent(0, 0)    # set charger output voltage & current to zero
                                             # these values are sent to EV via 0x109 after 0x102 is received
     
     # the following loop is structured so that at various points parameters can be changed, and the EV response
-    # monitored for timeouts, etc.  Initially, the loop is set to run for 1000 mainfunction scans at ~31mS/scan
+    # monitored for timeouts, etc.  Initially, the loop is set to run for 660 mainfunction scans at ~31mS/scan
     # which is approximately 20secs. Inject comments into log by printing comments starting with '#'
     try:
         for i in range(0, 660):      
@@ -763,11 +763,11 @@ if __name__ == "__main__":
                 print("# Start polling hardwareInterface to read GPIO inputs and wait for EV CAN-bus to start")
             
             # now change parameters at specific times of the charging cycle
-            if (i==3):              # after ~100mS...
+            if (i==3):              # after ~90mS...
                 print("# Start EV CAN-bus and inform charger of EV's Maximum Voltage and Current needs")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
                                     # the EV's 'maximum' Voltage and Current requirements to the charger
-            if (i==150):            # by now (~3s after SS1), EV should assert signal 'k' ChargePermit 
+            if (i==100):            # by now (~3s after SS1), EV should assert signal 'k' ChargePermit 
                 print("# Activate charge signal d2/SS2 to EV to enable HV contactors")
                 hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
                 pass                # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
@@ -789,7 +789,7 @@ if __name__ == "__main__":
                 print("# set d1/SS1 OFF to disable EV CAN-bus")
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
 
-            sleep(0.03)             # wait for approx. scan time. ie 30mS sleep + 1mS computation
+            sleep(0.03)             # wait for approx. scan time. ie 30mS sleep + 2mS computation
 
     except KeyboardInterrupt:       # ctrl-C quits if all else fails!
             pass
