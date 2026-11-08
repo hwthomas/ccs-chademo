@@ -1,8 +1,8 @@
 #
 # This program readsfrom a log file written in can_print/qc-print format
 # and decodes & prints those CAN_IDs that are used in the CHAdeMO charging
-# sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109). Unrecognised IDs are ignored
-# and not decoded.
+# sequence (IDs 0x100, 0x101, 0x102, 0x108, 0x109). Unrecognised IDs are 
+# ignored and not decoded.
 #
 # It is a special version of log_decode which reads can_print/qc-print logs only
 #
@@ -87,116 +87,115 @@ class can_decode():
         # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
         # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
        
-        if message:
-
-            if message.arbitration_id == 0x100:                 # CAN-ID 0x100
-                new_value = message.data[0]
-                if self.minChargeCurrent != new_value:
-                    self.addToTrace("0x100: minChargeCurrent = %d A" % new_value)
-                    self.minChargeCurrent = new_value
+        if message.arbitration_id == 0x100:                 # CAN-ID 0x100
+            new_value = message.data[0]
+            if self.minChargeCurrent != new_value:
+                self.addToTrace("0x100: minChargeCurrent = %d A" % new_value)
+                self.minChargeCurrent = new_value
  
-                new_value = int(message.data[2]) + int(message.data[3])*256
-                if(self.minBatteryVoltage != new_value):
-                    self.addToTrace("0x100: minBatteryVolts = %d V" % new_value)
-                    self.minBatteryVoltage = new_value
+            new_value = int(message.data[2]) + int(message.data[3])*256
+            if(self.minBatteryVoltage != new_value):
+                self.addToTrace("0x100: minBatteryVolts = %d V" % new_value)
+                self.minBatteryVoltage = new_value
                     
-                new_value = int(message.data[4]) + int(message.data[5])*256
-                if(self.maxBatteryVoltage != new_value):
-                    self.addToTrace("0x100: maxBatteryVolts = %d V" % new_value)
-                    self.maxBatteryVoltage = new_value
+            new_value = int(message.data[4]) + int(message.data[5])*256
+            if(self.maxBatteryVoltage != new_value):
+                self.addToTrace("0x100: maxBatteryVolts = %d V" % new_value)
+                self.maxBatteryVoltage = new_value
 
-                new_value = message.data[6]
-                if(self.socPercentFactor != new_value):
-                    self.addToTrace("0x100 socPercentFactor = %d " % new_value)
-                    self.socPercentFactor = new_value
+            new_value = message.data[6]
+            if(self.socPercentFactor != new_value):
+                self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                self.socPercentFactor = new_value
 
 
-            if message.arbitration_id == 0x101:                 # CAN-ID 0x101
-                new_value = message.data[2]
-                if(self.maxChargeTime != new_value):
-                    self.addToTrace("0x101: maxChargeTime = %d mins" % new_value)
-                    self.maxChargeTime = new_value
+        if message.arbitration_id == 0x101:                 # CAN-ID 0x101
+            new_value = message.data[2]
+            if(self.maxChargeTime != new_value):
+                self.addToTrace("0x101: maxChargeTime = %d mins" % new_value)
+                self.maxChargeTime = new_value
 
-                new_value = message.data[3]
-                if(self.estChargeTime != new_value):
-                    self.addToTrace("0x101: estChargeTime = %d mins" % new_value)
-                    self.estChargeTime = new_value
+            new_value = message.data[3]
+            if(self.estChargeTime != new_value):
+                self.addToTrace("0x101: estChargeTime = %d mins" % new_value)
+                self.estChargeTime = new_value
 
-                new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
-                if(self.ratedCapacitykWh != new_value):
-                    self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
-                    self.ratedCapacitykWh = new_value
+            new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
+            if(self.ratedCapacitykWh != new_value):
+                self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
+                self.ratedCapacitykWh = new_value
                     
 
-            if message.arbitration_id == 0x102:                 # CAN-ID 0x102
-                new_value = message.data[0]
-                if(self.evCdMversion != new_value):             # EV CHAdeMO version
-                    self.addToTrace("0x102 evCdMversion = %X" % new_value)
-                    self.evCdMversion = new_value
+        if message.arbitration_id == 0x102:                 # CAN-ID 0x102
+            new_value = message.data[0]
+            if(self.evCdMversion != new_value):             # EV CHAdeMO version
+                self.addToTrace("0x102 evCdMversion = %X" % new_value)
+                self.evCdMversion = new_value
                     
-                new_value = int(message.data[1]) + int(message.data[2])*256
-                if(self.targetBatteryVoltage != new_value):
-                    self.addToTrace("0x102: targetBatteryVoltage = %d V" % new_value)
-                    self.targetBatteryVoltage = new_value
+            new_value = int(message.data[1]) + int(message.data[2])*256
+            if(self.targetBatteryVoltage != new_value):
+                self.addToTrace("0x102: targetBatteryVoltage = %d V" % new_value)
+                self.targetBatteryVoltage = new_value
                     
-                new_value = message.data[3]
-                if(self.chargeCurrentRequest != new_value):
-                    self.addToTrace("0x102: chargeCurrentRequest = %d A" % new_value)
-                    self.chargeCurrentRequest = new_value
+            new_value = message.data[3]
+            if(self.chargeCurrentRequest != new_value):
+                self.addToTrace("0x102: chargeCurrentRequest = %d A" % new_value)
+                self.chargeCurrentRequest = new_value
                     
-                new_value = message.data[4]
-                if(self.evFaultBits != new_value):
-                    self.addToTrace("0x102: evFaultBits = %X" % new_value)
-                    self.evFaultBits = new_value
+            new_value = message.data[4]
+            if(self.evFaultBits != new_value):
+                self.addToTrace("0x102: evFaultBits = %X" % new_value)
+                self.evFaultBits = new_value
                     
-                new_value = message.data[5]
-                if(self.evStatusBits != new_value):
-                    self.addToTrace("0x102: evStatusBits = %X" % new_value)
-                    self.evStatusBits = new_value
+            new_value = message.data[5]
+            if(self.evStatusBits != new_value):
+                self.addToTrace("0x102: evStatusBits = %X" % new_value)
+                self.evStatusBits = new_value
 
-                new_value = message.data[6]
-                if(self.evStateOfCharge != message.data[6]):
-                    self.addToTrace("0x102: evStateOfCharge = %d %%" % new_value)
+            if self.socPercentFactor > 0:       # (used in this next calculation)
+                new_value = message.data[6] / self.socPercentFactor * 100
+                if(self.evStateOfCharge != new_value):
+                    self.addToTrace("0x102 evStateOfCharge = %d %%" % new_value)
                     self.evStateOfCharge = new_value
 
 
-            if message.arbitration_id == 0x108:                 # CAN-ID 0x108
-                new_value = message.data[0]
-                if(self.weldingDetection != new_value):
-                    self.addToTrace("0x108: weldingDetection = %X " % new_value)
-                    self.weldingDetection = new_value
+        if message.arbitration_id == 0x108:                 # CAN-ID 0x108
+            new_value = message.data[0]
+            if(self.weldingDetection != new_value):
+                self.addToTrace("0x108: weldingDetection = %X " % new_value)
+                self.weldingDetection = new_value
 
-                new_value = int(message.data[1]) + int(message.data[2])*256
-                if(self.maxChargerVoltage != new_value):
-                    self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
-                    self.maxChargerVoltage = new_value
+            new_value = int(message.data[1]) + int(message.data[2])*256
+            if(self.maxChargerVoltage != new_value):
+                self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
+                self.maxChargerVoltage = new_value
                     
-                new_value = message.data[3]
-                if(self.maxChargerCurrent != new_value):
-                    self.addToTrace("0x108: maxChargerCurrent = %d A" % new_value)
-                    self.maxChargerCurrent = new_value
+            new_value = message.data[3]
+            if(self.maxChargerCurrent != new_value):
+                self.addToTrace("0x108: maxChargerCurrent = %d A" % new_value)
+                self.maxChargerCurrent = new_value
 
-                new_value = int(message.data[4]) + int(message.data[5])*256
-                if(self.thresholdVoltage != new_value):
-                    self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
-                    self.thresholdVoltage = new_value
+            new_value = int(message.data[4]) + int(message.data[5])*256
+            if(self.thresholdVoltage != new_value):
+                self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
+                self.thresholdVoltage = new_value
 
 
-            if message.arbitration_id == 0x109:                 # CAN-ID 0x109
-                new_value = message.data[0]
-                if(self.evseCdMversion != new_value):           # EVSE CHAdeMO version
-                    self.addToTrace("0x109 evseCdMversion = %X" % new_value)
-                    self.evseCdMversion = new_value
+        if message.arbitration_id == 0x109:                 # CAN-ID 0x109
+            new_value = message.data[0]
+            if(self.evseCdMversion != new_value):           # EVSE CHAdeMO version
+                self.addToTrace("0x109 evseCdMversion = %X" % new_value)
+                self.evseCdMversion = new_value
                     
-                new_value = int(message.data[1]) + int(message.data[2])*256
-                if(self.chargerVoltage != new_value):
-                    self.addToTrace("0x109: chargerVoltage = %d V" % new_value)
-                    self.chargerVoltage = new_value
+            new_value = int(message.data[1]) + int(message.data[2])*256
+            if(self.chargerVoltage != new_value):
+                self.addToTrace("0x109: chargerVoltage = %d V" % new_value)
+                self.chargerVoltage = new_value
 
-                new_value = message.data[3]
-                if(self.chargerCurrent != new_value):
-                    self.addToTrace("0x109: chargerCurrent = %d A" % new_value)
-                    self.chargerCurrent = new_value
+            new_value = message.data[3]
+            if(self.chargerCurrent != new_value):
+                self.addToTrace("0x109: chargerCurrent = %d A" % new_value)
+                self.chargerCurrent = new_value
 
     def mainfunction(self, can_log_file = None):     # can_decode.mainfunction()
         pass

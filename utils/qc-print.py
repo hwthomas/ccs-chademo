@@ -58,15 +58,67 @@ class CHAdeMO():
     def __init__(self):
         self.GPIO = GPIO
         self.canbus = canbus
-        self.evseCHAdeMO_version = 2
+
+        self.evChargePermit = 0
+        self.minChargeCurrent = 0       # CAN-ID 0x100
+        self.minBatteryVoltage  = 0
         self.maxBatteryVoltage = 435
+        self.socPercentFactor = 100
+        self.maxChargeTime  = 255       # CAN-ID 0x101
+        self.estChargeTime = 0
+        self.ratedCapacitykWh = 0
+        self.evCdMversion = 2           # CAN-ID 0x102
+        self.targetBatteryVoltage = 402
+        self.chargeCurrentRequest = 0
+        self.evFaultBits = 0
+        self.evStatusBits = 0
+        self.evStateOfCharge = 50
+
+        self.weldingDetection = 1       # CAN-ID 0x108
         self.maxChargerVoltage = 510
         self.maxChargerCurrent = 135
         self.thresholdVoltage = 435
+        self.evseCdMversion = 2         # CAN-ID 0x109
         self.chargerVoltage = 0
         self.chargerCurrent = 0
-        self.weldDetect = 1
-        self.evChargePermit = 0
+
+    def qc_decode(self, message):  # decodes the CHAdeMO specific messages
+        # 
+        # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
+        # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
+        # dbc files are expanded in https://github.com/hwthomas/ccs-chademo/doc/QC_CAN_messages
+        # These dbc files were updated (June 2026) & all 16-bit values are now Intel format
+       
+        if message.arbitration_id == 0x100:                 # CAN-ID 0x100
+            self.minChargeCurrent = message.data[0]
+            self.minBatteryVoltage  = int(message.data[2]) + int(message.data[3])*256
+            self.maxBatteryVoltage = int(message.data[4]) + int(message.data[5])*256
+            self.socPercentFactor = message.data[6]
+
+        if message.arbitration_id == 0x101:                 # CAN-ID 0x101
+            self.maxChargeTime  = message.data[2]
+            self.estChargeTime = message.data[3]
+            self.ratedCapacitykWh = (int(message.data[5]) + int(message.data[6])*256) * 0.1
+
+        if message.arbitration_id == 0x102:                 # CAN-ID 0x102
+            self.evCdMversion = message.data[0]
+            self.targetBatteryVoltage = int(message.data[1]) + int(message.data[2])*256
+            self.chargeCurrentRequest = message.data[3]
+            self.evFaultBits = message.data[4]
+            self.evStatusBits = message.data[5]
+            if self.socPercentFactor > 0:       # (used in this next calculation)
+                self.evStateOfCharge = message.data[6] / self.socPercentFactor * 100
+
+        if message.arbitration_id == 0x108:                 # CAN-ID 0x108
+            self.weldingDetection = message.data[0]
+            self.maxChargerVoltage = int(message.data[1]) + int(message.data[2])*256
+            self.maxChargerCurrent = message.data[3]
+            self.thresholdVoltage = int(message.data[4]) + int(message.data[5])*256
+
+        if message.arbitration_id == 0x109:                 # CAN-ID 0x109
+            self.evseCdMversion = message.data[0]
+            self.chargerVoltage = int(message.data[1]) + int(message.data[2])*256
+            self.chargerCurrent = message.data[3]
 
     # send CAN message 0x108 to the EV with the Charger parameters (maxChargerVoltage, maxChargerCurrent).
     # this message must be send after CAN message 0x100 has been received from the EV with its parameter
@@ -152,6 +204,7 @@ try:
                 c +=  "{0:02X} ".format(message.data[i])
             print("{}".format(c))        # print entire message from format string
 
+            cdm.qc_decode(message)
             if(message.arbitration_id == 0x100):    # send message 0x108 after 0x100 received
                 cdm.canSend0x108()  
             if(message.arbitration_id == 0x102):    # send message 0x109 after 0x102 received
