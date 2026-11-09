@@ -80,7 +80,7 @@ class can_decode():
         # end of CHAdeMO test variables
         
 
-    def cdm_decode(self, message):
+    def decode(self, message):
         # 
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
@@ -177,7 +177,7 @@ class can_decode():
 
             new_value = int(message.data[4]) + int(message.data[5])*256
             if(self.thresholdVoltage != new_value):
-                self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
+                self.addToTrace("0x108: thresholdVoltage = %d V" % new_value)
                 self.thresholdVoltage = new_value
 
 
@@ -245,7 +245,7 @@ if __name__ == "__main__":
             # generate a CAN message with the timestamp and parameters read from the log file
             msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
             cdc_timestamp = ts              # copy log timestamp locally for trace function cdcAddToTrace above
-            cdc.cdm_decode(msg)             # decode the message as per LEAF info
+            cdc.decode(msg)                 # decode the message as per LEAF info
 
             time.sleep(0.01)                # wait 10mS before decoding next message
         pass                            # end of for loop

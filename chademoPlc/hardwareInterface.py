@@ -351,7 +351,6 @@ class hardwareInterface():
 
         # The following class variables are for comms to/from the CHAdeMO EV
         # some are initialised to valid values because they may be used before CAN has been updated
-        self.cdmVersion = 1                 # initial EVSE CHAdeMO version (0= <0.9, 1=0.9/1.0/1.1, 2=1.2/2+)
  
         # EV tells the charger the maximum voltage and current it 'needs' via CAN-ID 0x100
         self.minChargerCurrent = None       # CAN-ID 0x100 
@@ -363,7 +362,7 @@ class hardwareInterface():
         self.estChargeTimeMins = None
         self.ratedCapacitykWh = None
 
-        self.evCdMversion = 0               # CAN-ID 0x102 EV CHAdeMO version (0=0.9, 1=1.0/.1/.2, 2=2+)
+        self.evCdMversion = 1               # CAN-ID 0x102 EV CHAdeMO version (0=0.9, 1=1.0/.1/.2, 2=2+)
         self.targetBatteryVoltage = 0       # charging loop voltage and current requests
         self.chargeCurrentRequest = 0
         self.evFaultBits = None             # EV fault bits
@@ -378,7 +377,7 @@ class hardwareInterface():
         self.maxChargerCurrent = 0  
         self.thresholdVoltage = 0           # this is the maximum charger will use (for protection of the EV)
 
-        self.evseCdMversion = 0             # CAN-ID 0x109 - charger CHAdeMO version supported 
+        self.evseCdMversion = 1             # CAN-ID 0x109 - EVSE CHAdeMO version (0= <0.9, 1=0.9/1.0/1.1, 2=1.2/2+)
         self.chargerVoltage = 0             # actual voltage and current being delivered in response
         self.chargerCurrent = 0             # to the EV 0x102 requests while in the (emulated) charging loop
 
@@ -548,25 +547,25 @@ class hardwareInterface():
             self.chargerCurrent = int(currentNow)
 
     def estimatedLBCvolts(self, soc_percent):
-        # linear interpolation between 335v at SOC=8% and 398v at SOC=100%
-        lbcVolts = int(335 + (398-335) * (soc_percent-8) / (100 - 8))
+        # linear interpolation between 338v at SOC=8% and 398v at SOC=100%
+        lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
         return lbcVolts
         
     def emulateChargerResponse(self):  # call this after the hw.mainfunction has updated all CAN values on each scan.
-        # This emulates a charger by filtering the EV current requests with a first-order filter to produce the
-        # 'actual' output lagging current response.  The 'actual' output voltage is then produced by adding the
-        # HV voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
-        # The updated 'charger' outputs will then be sent back to the EV in CAN message 0x109.
-        # The targetBatteryVoltage appears not to change throughout the charging cycle.
-        # simulate fast shutdown by setting output current filter to a fast rate if zero current is requested
-        # get the volts and amps inputs from the EV values requested in message 0x102
+        # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
+        # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
+        # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
+        # The estimated charger outputs will then be sent back to the EV in CAN message 0x109.
+        # The targetBatteryVoltage request from the EV appears not to change throughout the charging cycle.
+        # Simulate fast shutdown by setting output current filter to a fast rate if zero current is requested
+        # Get the volts and amps inputs from the EV values requested in message 0x102
         current_in = self.chargeCurrentRequest    # updated by CAN message 0x102 from the EV
-        # process the current requests with a first-order filter
-        if(current_in == 0):   # more rapid (ish) shutdown
-            self.chargerCurrent = int(self.chargerCurrent * 0.2 + current_in * 0.8)
+        # process the current requests with a simple first-order filter
+        if(current_in > 0):   
+            self.chargerCurrent = int(self.chargerCurrent * 0.9 + current_in * 0.1)     # normal 10-sample filter
         else:
-            self.chargerCurrent = int(self.chargerCurrent * 0.9 + current_in * 0.1)
-        # estimate the voltage from battery volts + (current * internal resistance)
+            self.chargerCurrent = int(self.chargerCurrent * 0.2 + current_in * 0.8)     # more rapid shutdown
+        # estimate the charger voltage from LBC battery volts + (current * internal resistance)
         internalResistance = 0.5       # empirical value based on EV max power output
         self.chargerVoltage = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.chargerCurrent
         # the EV will be updated with these values when message 0x109 is sent on next scan
@@ -574,7 +573,7 @@ class hardwareInterface():
     # send CAN message 0x108 to the EV with the Charger parameters (self.maxChargerVoltage, self.maxChargerCurrent)
     # this message must be send *after* CAN message 0x100 has been received from the EV with *its* parameters           
     def canSend0x108(self):
-        # construct CAN message 0x108 and send it (even if maxVolts or maxCurrent haven't changed)
+        # construct CAN message 0x108 and send it once CAN-ID 0x100 has been received
         self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
         th_lo = int(self.thresholdVoltage) & 0xFF
         th_hi = int(self.thresholdVoltage) >> 8
@@ -585,8 +584,8 @@ class hardwareInterface():
     # this message must be send *after* CAN message 0x102 from the EV with its voltage and current requests, which will be
     # sent via the simulated charger response function to produce the 'actual' charger output current and voltage         
     def canSend0x109(self):
-        # construct CAN message 0x109 and send it (even if output volts or output current haven't changed)
-        cdm = self.cdmVersion   # tell EV what CHAdeMO version we support (fixed at initial value of 1)
+        # construct CAN message 0x109 and send it once CAN-ID 0x102 has been received
+        cdm = self.evseCdMversion   # tell EV what CHAdeMO version we support (fixed at initial value of 1)
         status = 4    # always report connector locked (adapter has no lock at present)
         msg = can.Message(arbitration_id=0x109, data=[cdm, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
         self.canbus.send(msg)

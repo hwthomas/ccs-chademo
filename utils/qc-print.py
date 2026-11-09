@@ -82,7 +82,7 @@ class CHAdeMO():
         self.chargerVoltage = 0
         self.chargerCurrent = 0
 
-    def qc_decode(self, message):  # decodes the CHAdeMO specific messages
+    def decode(self, message):  # decodes the CHAdeMO specific messages
         # 
         # The following CAN_ID details are taken from the Nissan Leaf 2+ tables as specified
         # by https://github.com/dalathegreat/leaf_can_bus_messages/QC-CAN_ALL.dbc.  The interpreted
@@ -120,8 +120,33 @@ class CHAdeMO():
             self.chargerVoltage = int(message.data[1]) + int(message.data[2])*256
             self.chargerCurrent = message.data[3]
 
+
+    def estimatedLBCvolts(self, soc_percent):
+        # linear interpolation between 338v at SOC=8% and 398v at SOC=100%
+        lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
+        return lbcVolts
+        
+    def emulateChargerResponse(self):  # call this after the CHAdeMO.decode call has updated all CAN values on each scan.
+        # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
+        # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
+        # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
+        # The estimated charger outputs will then be sent back to the EV in CAN message 0x109.
+        # The targetBatteryVoltage request from the EV appears not to change throughout the charging cycle.
+        # Simulate fast shutdown by setting output current filter to a fast rate if zero current is requested
+        # Get the volts and amps inputs from the EV values requested in message 0x102
+        current_in = self.chargeCurrentRequest    # updated by CAN message 0x102 from the EV
+        # process the current requests with a simple first-order filter
+        if(current_in > 0):   
+            self.chargerCurrent = int(self.chargerCurrent * 0.9 + current_in * 0.1)     # normal 10-sample filter
+        else:
+            self.chargerCurrent = int(self.chargerCurrent * 0.2 + current_in * 0.8)     # more rapid shutdown
+        # estimate the charger voltage from LBC battery volts + (current * internal resistance)
+        internalResistance = 0.5       # empirical value based on EV max power output
+        self.chargerVoltage = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.chargerCurrent
+        # the EV will be updated with these values when message 0x109 is next sent
+
     # send CAN message 0x108 to the EV with the Charger parameters (maxChargerVoltage, maxChargerCurrent).
-    # this message must be send after CAN message 0x100 has been received from the EV with its parameter
+    # this message must be send *after* CAN message 0x100 has been received from the EV with its parameter
     # maxBatteryVoltage.  Parameters maxChargerVoltage/maxChargerCurrent are fixed properties of the charger       
     def canSend0x108(self):
         self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
@@ -137,8 +162,9 @@ class CHAdeMO():
             self.canbus.shutdown()
             exit()
     
-    # send CAN message 0x109 to the EV with charging loop *actual* values (chargerVoltage, chargeCurrent)
-    # this message must be send after CAN message 0x102 from the EV with *its* voltage and current requests          
+    # send CAN message 0x109 to the EV with charging loop 'actual' values (chargerVoltage, chargeCurrent)
+    # this message must be send *after* CAN message 0x102 from the EV with *its* voltage and current requests
+    # and after the charger emulation has been called to mimic the charger response to these requests          
     def canSend0x109(self):
         status = 4    # always report connector locked (adapter has no lock at present)
         cv_lo = int(self.chargerVoltage) & 0xFF
@@ -171,7 +197,7 @@ class CHAdeMO():
     def readEVchargePermit(self):               # read GPIO input when called
         new_value = not self.GPIO.input(pin_k)  # pin_k is active(LOW)
         if(new_value != self.evChargePermit):
-            self.evChargePermit = new_value     # update via mainfunction scan only
+            self.evChargePermit = new_value     # update via direct call on each scan
             print("# GPIO.pin_k evChargePermit = {0:02X}".format(self.evChargePermit))
 
 pass    # end of class CHAdeMO
@@ -182,18 +208,9 @@ try:
     cdm = CHAdeMO()                                 # create CHAdeMO class and local variables
     startTime_ms = round(time.time()*1000)          # start the clock
     for i in range(0, 660):             # loop for ~20+ Sec at ~31mS per scan
-        # GPIO and CAN-bus updates
+        # GPIO and CAN-bus updates on each scan...
         cdm.readEVchargePermit()        # poll EVchargePermit GPIO input (signal k) on each scan
-        if(i == 3):
-            cdm.setSS1_On()             # after ~100mS enable CAN comms on EV
-        if(i == 150):
-            cdm.setSS2_On()             # after ~05secs enable EV contactors
-        if(i == 500):
-            cdm.setSS2_Off()            # after ~15secs disable EV contactors
-        if(i == 600):
-            cdm.setSS1_Off()            # after ~18secs disable CAN comms on EV
-            
-        message = cdm.canbus.recv(0)    # non-blocking check for (any) CAN-bus message
+        message = cdm.canbus.recv(0)    # non-blocking check for CHAdeMO CAN-bus messages
         if message:
             currentTime_ms = round(time.time()*1000)    # update current time
             local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message printing
@@ -204,11 +221,22 @@ try:
                 c +=  "{0:02X} ".format(message.data[i])
             print("{}".format(c))        # print entire message from format string
 
-            cdm.qc_decode(message)
+            cdm.decode(message)                     # update CHAdeMO variables from message
+            cdm.emulateChargerResponse()            # pretend a charger has sent a response
+
             if(message.arbitration_id == 0x100):    # send message 0x108 after 0x100 received
                 cdm.canSend0x108()  
             if(message.arbitration_id == 0x102):    # send message 0x109 after 0x102 received
-                cdm.canSend0x109()  
+                cdm.canSend0x109()
+                
+        if(i == 3):                 # actions at specific scan times
+            cdm.setSS1_On()         # after ~100mS enable CAN comms on EV
+        if(i == 150):
+            cdm.setSS2_On()         # after ~05secs enable EV contactors
+        if(i == 500):
+            cdm.setSS2_Off()        # after ~15secs disable EV contactors
+        if(i == 600):
+            cdm.setSS1_Off()        # after ~18secs disable CAN comms on EV
 
         # pause 30mS, then loop for next message or until Ctrl-C
         time.sleep(0.03) 
