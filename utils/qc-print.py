@@ -78,7 +78,7 @@ class CHAdeMO():
         self.maxChargerVoltage = 510
         self.maxChargerCurrent = 135
         self.thresholdVoltage = 435
-        s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 = 2         # CAN-ID 0x109
+        self.evseCdMversion = 2         # CAN-ID 0x109
         self.chargerVoltage = 0
         self.chargerCurrent = 0
 
