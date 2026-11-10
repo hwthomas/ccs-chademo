@@ -68,7 +68,7 @@ class can_decode():
         self.evStatusBits = -1
         self.evStateOfCharge = -1
         
-        self.weldingDetection = 0           # CAN-ID 0x108 - charger supports EV welding detection       
+        self.weldDetect = 0                 # CAN-ID 0x108 - charger supports EV weld detection       
         self.maxChargerVoltage = 0
         self.maxChargerCurrent = 0
         self.thresholdVoltage = 0           # this is the maximum it will use (for protection of the EV)
@@ -161,9 +161,9 @@ class can_decode():
 
         if message.arbitration_id == 0x108:                 # CAN-ID 0x108
             new_value = message.data[0]
-            if(self.weldingDetection != new_value):
-                self.addToTrace("0x108: weldingDetection = %X " % new_value)
-                self.weldingDetection = new_value
+            if(self.weldDetect != new_value):
+                self.addToTrace("0x108: weld Detect = %X " % new_value)
+                self.weldDetect = new_value
 
             new_value = int(message.data[1]) + int(message.data[2])*256
             if(self.maxChargerVoltage != new_value):

@@ -74,7 +74,7 @@ class CHAdeMO():
         self.evStatusBits = 0
         self.evStateOfCharge = 50
 
-        self.weldingDetection = 1       # CAN-ID 0x108
+        self.weldDetect = 1             # CAN-ID 0x108
         self.maxChargerVoltage = 510
         self.maxChargerCurrent = 135
         self.thresholdVoltage = 435
