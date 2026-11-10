@@ -585,9 +585,10 @@ class hardwareInterface():
     # sent via the simulated charger response function to produce the 'actual' charger output current and voltage         
     def canSend0x109(self):
         # construct CAN message 0x109 and send it once CAN-ID 0x102 has been received
-        cdm = self.evseCdMversion   # tell EV what CHAdeMO version we support (fixed at initial value of 1)
         status = 4    # always report connector locked (adapter has no lock at present)
-        msg = can.Message(arbitration_id=0x109, data=[cdm, self.chargerVoltage & 0xFF, self.chargerVoltage >> 8, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        cv_lo = int(self.chargerVoltage) & 0xFF
+        cv_hi = int(self.chargerVoltage) >> 8
+        msg = can.Message(arbitration_id=0x109, data=[self.evseCdMversion, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
 
     def mainfunction_chademo(self):
