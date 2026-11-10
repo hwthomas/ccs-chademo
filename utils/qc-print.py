@@ -204,23 +204,26 @@ pass    # end of class CHAdeMO
 
 # -----------------------------     Start of main program loop      ----------------------------
 
-try:
-    cdm = CHAdeMO()                                 # create CHAdeMO class and local variables
-    startTime_ms = round(time.time()*1000)          # start the clock
-    for i in range(0, 660):             # loop for ~20+ Sec at ~31mS per scan
-        # GPIO and CAN-bus updates on each scan...
-        cdm.readEVchargePermit()        # poll EVchargePermit GPIO input (signal k) on each scan
-        message = cdm.canbus.recv(0)    # non-blocking check for CHAdeMO CAN-bus messages
-        if message:
-            currentTime_ms = round(time.time()*1000)    # update current time
-            local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message printing
-            # build format string: timestamp, ID, and dlc first
-            c = "{0:.1f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
-            # then append the 2-digit hex data bytes with a single space separator after each
-            for i in range(message.dlc):
-                c +=  "{0:02X} ".format(message.data[i])
-            print("{}".format(c))        # print entire message from format string
+startTime_ms = round(time.time()*1000)          # start the clock
 
+def print_message(message):
+    global startTime_ms
+    currentTime_ms = round(time.time()*1000)    # update current time
+    local_ts = currentTime_ms - startTime_ms    # local timestamp for CAN message printing
+    # build format string: timestamp, ID, and dlc first
+    c = "{0:.1f} {1:03X} {2:02X} ".format(local_ts, message.arbitration_id, message.dlc)
+    # then append the 2-digit hex data bytes with a single space separator after each
+    for i in range(message.dlc):
+        c +=  "{0:02X} ".format(message.data[i])
+    print("{}".format(c))        # print entire message from format string
+    
+try:
+    cdm = CHAdeMO()                                 # create CHAdeMO class and variables
+    for scan in range(0, 660):                      # loop for ~20+ Sec at ~31mS per scan
+        cdm.readEVchargePermit()                    # poll EVchargePermit GPIO input (signal k) on each scan
+        message = cdm.canbus.recv(0)                # non-blocking check for CHAdeMO CAN-bus messages
+        if message:
+            print_message(message)
             cdm.decode(message)                     # update CHAdeMO variables from message
             cdm.emulateChargerResponse()            # pretend a charger has sent a response
 
@@ -228,14 +231,15 @@ try:
                 cdm.canSend0x108()  
             if(message.arbitration_id == 0x102):    # send message 0x109 after 0x102 received
                 cdm.canSend0x109()
-                
-        if(i == 3):                 # actions at specific scan times
+
+        # actions initiated at specific scan times  (scan_count * 30mS)               
+        if(scan == 3):
             cdm.setSS1_On()         # after ~100mS enable CAN comms on EV
-        if(i == 150):
+        if(scan == 150):
             cdm.setSS2_On()         # after ~05secs enable EV contactors
-        if(i == 500):
+        if(scan == 500):
             cdm.setSS2_Off()        # after ~15secs disable EV contactors
-        if(i == 600):
+        if(scan == 600):
             cdm.setSS1_Off()        # after ~18secs disable CAN comms on EV
 
         # pause 30mS, then loop for next message or until Ctrl-C
