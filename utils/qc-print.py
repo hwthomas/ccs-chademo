@@ -78,7 +78,7 @@ class CHAdeMO():
         self.maxChargerVoltage = 510
         self.maxChargerCurrent = 135
         self.thresholdVoltage = 435
-        self.evseCdMversion = 2         # CAN-ID 0x109
+        s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 = 2         # CAN-ID 0x109
         self.chargerVoltage = 0
         self.chargerCurrent = 0
 
@@ -169,7 +169,7 @@ class CHAdeMO():
         status = 4    # always report connector locked (adapter has no lock at present)
         cv_lo = int(self.chargerVoltage) & 0xFF
         cv_hi = int(self.chargerVoltage) >> 8
-        msg = can.Message(arbitration_id=0x109, data=[self.evseCHAdeMO_version, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        msg = can.Message(arbitration_id=0x109, data=[self.evseCdMversion, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
         try:
             self.canbus.send(msg)
         except can.CanError:
