@@ -81,6 +81,12 @@ class CHAdeMO():
         self.evseCdMversion = 2         # CAN-ID 0x109
         self.chargerVoltage = 0
         self.chargerCurrent = 0
+        
+        self.voltage_out = 0    # use these values with 0x109 to the EV, rather than self.chargerVoltage and
+        self.current_out = 0    # self.chargerCurrent, otherwise decoding 0x109 doesn't print any difference
+        
+        # end of CHAdeMO variables
+
 
     def decode(self, message):  # decodes the CHAdeMO specific messages
         # 
@@ -126,9 +132,6 @@ class CHAdeMO():
         lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
         return lbcVolts
         
-    self.voltage_out = 0    # use these values with 0x109 to the EV, rather than self.chargerVoltage and
-    self.current_out = 0    # self.chargerCurrent, otherwise decoding 0x109 doesn't print any difference
-
     def emulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
         # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
         # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
