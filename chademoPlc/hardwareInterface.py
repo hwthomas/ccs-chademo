@@ -378,8 +378,8 @@ class hardwareInterface():
         self.thresholdVoltage = 0           # this is the maximum charger will use (for protection of the EV)
 
         self.evseCdMversion = 1             # CAN-ID 0x109 - EVSE CHAdeMO version (0= <0.9, 1=0.9/1.0/1.1, 2=1.2/2+)
-        self.chargerVoltage = 0             # actual voltage and current being delivered in response
-        self.chargerCurrent = 0             # to the EV 0x102 requests while in the (emulated) charging loop
+        self.chargerVoltage = 0             # actual voltage and current being delivered in response to 
+        self.chargerCurrent = 0             # the EV 0x102 requests in the (emulated) charging loop
 
         # end of CHAdeMO current variables
 
@@ -550,8 +550,11 @@ class hardwareInterface():
         # linear interpolation between 338v at SOC=8% and 398v at SOC=100%
         lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
         return lbcVolts
-        
-    def emulateChargerResponse(self):  # call this after the hw.mainfunction has updated all CAN values on each scan.
+     
+    self.voltage_out = 0    # use these values with 0x109 to the EV, rather than self.chargerVoltage and
+    self.current_out = 0    # self.chargerCurrent, otherwise decoding 0x109 doesn't print any difference
+                   
+    def emulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
         # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
         # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
         # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
@@ -562,12 +565,12 @@ class hardwareInterface():
         current_in = self.chargeCurrentRequest    # updated by CAN message 0x102 from the EV
         # process the current requests with a simple first-order filter
         if(current_in > 0):   
-            self.chargerCurrent = int(self.chargerCurrent * 0.9 + current_in * 0.1)     # normal 10-sample filter
+            self.current_out = int(self.chargerCurrent * 0.9 + current_in * 0.1)    # normal 10-sample filter
         else:
-            self.chargerCurrent = int(self.chargerCurrent * 0.2 + current_in * 0.8)     # more rapid shutdown
-        # estimate the charger voltage from LBC battery volts + (current * internal resistance)
+            self.current_out = int(self.chargerCurrent * 0.2 + current_in * 0.8)    # more rapid shutdown
+        # estimate the charger output voltage from LBC battery volts + (current * internal resistance)
         internalResistance = 0.5       # empirical value based on EV max power output
-        self.chargerVoltage = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.chargerCurrent
+        self.voltage_out = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.current_out
         # the EV will be updated with these values when message 0x109 is sent on next scan
 
     # send CAN message 0x108 to the EV with the Charger parameters (self.maxChargerVoltage, self.maxChargerCurrent)
@@ -575,9 +578,9 @@ class hardwareInterface():
     def canSend0x108(self):
         # construct CAN message 0x108 and send it once CAN-ID 0x100 has been received
         self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
-        th_lo = int(self.thresholdVoltage) & 0xFF
-        th_hi = int(self.thresholdVoltage) >> 8
-        msg = can.Message(arbitration_id=0x108, data=[self.weldingDetection, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        thr_lo = int(self.thresholdVoltage) & 0xFF
+        thr_hi = int(self.thresholdVoltage) >> 8
+        msg = can.Message(arbitration_id=0x108, data=[self.weldingDetection, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, thr_lo, thr_hi, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
     
     # send CAN message 0x109 to the EV with charging loop actual values (self.chargerVoltage, self.chargerCurrent)
@@ -586,9 +589,9 @@ class hardwareInterface():
     def canSend0x109(self):
         # construct CAN message 0x109 and send it once CAN-ID 0x102 has been received
         status = 4    # always report connector locked (adapter has no lock at present)
-        cv_lo = int(self.chargerVoltage) & 0xFF
-        cv_hi = int(self.chargerVoltage) >> 8
-        msg = can.Message(arbitration_id=0x109, data=[self.evseCdMversion, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        cv_lo = int(self.voltage_out) & 0xFF
+        cv_hi = int(self.voltage_out) >> 8
+        msg = can.Message(arbitration_id=0x109, data=[self.evseCdMversion, cv_lo, cv_hi, self.current_out, 0, status, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
 
     def mainfunction_chademo(self):
@@ -685,38 +688,38 @@ class hardwareInterface():
             if(message.arbitration_id == 0x108):    # we don't normally receive 0x108, only send via setChargerParameters
                 new_value = message.data[0]
                 if(self.weldingDetection != new_value):
-                    self.addToTrace("ID 0x108: weldingDetection = %X" % new_value)
+                    self.addToTrace("0x108: weldingDetection = %X" % new_value)
                     self.weldingDetection = new_value
                      
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.maxChargerVoltage != new_value):
-                    self.addToTrace("ID 0x108: maxChargerVoltage = %d V" % new_value)
+                    self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
                     self.maxChargerVoltage = new_value
                     
                 new_value = message.data[3]
                 if(self.maxChargerCurrent != new_value):
-                    self.addToTrace("ID 0x108: maxChargerCurrent = %d A" % new_value)
+                    self.addToTrace("0x108: maxChargerCurrent = %d A" % new_value)
                     self.maxChargerCurrent = new_value
 
                 new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.thresholdVoltage != new_value):
-                    self.addToTrace("ID 0x108: thresholdVoltage = %d V" % new_value)
+                    self.addToTrace("0x108: thresholdVoltage = %d V" % new_value)
                     self.thresholdVoltage = new_value
 
             if(message.arbitration_id == 0x109):    # we don't normally receive 0x109, only send via canSend0x109 message
                 new_value = message.data[0]
                 if(self.evseCdMversion != new_value):
-                    self.addToTrace("ID 0x109: evseCdMversion = %X" % new_value)
+                    self.addToTrace("0x109: evseCdMversion = %X" % new_value)
                     self.evseCdMversion = new_value
                     
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.chargerVoltage != new_value):
-                    self.addToTrace("ID 0x109: actual charger Voltage = %d V" % new_value)
+                    self.addToTrace("0x109: actual charger Voltage = %d V" % new_value)
                     self.chargerVoltage = new_value
 
                 new_value = message.data[3]
                 if(self.chargerCurrent != new_value):
-                    self.addToTrace("ID 0x109: actual charger Current = %d A" % new_value)
+                    self.addToTrace("0x109: actual charger Current = %d A" % new_value)
                     self.chargerCurrent = new_value
 
         # if no CAN-ID 0x102 (chargeCurrentRequest) was received for over a second, time out and shut charging down
@@ -768,17 +771,17 @@ if __name__ == "__main__":
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms and send
                                     # the EV's 'maximum' Voltage and Current requirements to the charger
             if (i==100):            # by now (~3s after SS1), EV should assert signal 'k' ChargePermit 
-                print("# Activate charge signal d2/SS2 to EV to enable HV contactors")
+                print("# (+3.0s) Activate charge signal d2/SS2 to EV to enable contactors")
                 hw.setSS2_On()      # EVSE should next assert d2/SS2 to enable EV contactors (when volts align)
                 pass                # EV requests EVSE to increase volts, with a maximum of 2A current (PreCharge step)
 
-            if (i == 200):
-                print("# start emulating the charger response")
-            if (i >= 200):
-                hw.emulateChargerResponse()     # get the response from the 'charger'
+            if (i == 130):
+                print("# (+4.0s) Start emulating the charger response")
+            if (i >= 130):
+                hw.emulateChargerResponse()     # get output response from the 'charger'
 
             if (i==600):            # set EV current demand to zero 
-                print("# Set test Charger Current request to zero")
+                print("# (+19.0s) Set test Charger Current request to zero")
                 hw.setChargerVoltageAndCurrent(375, 0)
                 
             if (i==630):            # disable EV contactors

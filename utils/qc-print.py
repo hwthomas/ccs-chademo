@@ -126,7 +126,10 @@ class CHAdeMO():
         lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
         return lbcVolts
         
-    def emulateChargerResponse(self):  # call this after the CHAdeMO.decode call has updated all CAN values on each scan.
+    self.voltage_out = 0    # use these values with 0x109 to the EV, rather than self.chargerVoltage and
+    self.current_out = 0    # self.chargerCurrent, otherwise decoding 0x109 doesn't print any difference
+
+    def emulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
         # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
         # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
         # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
@@ -137,13 +140,13 @@ class CHAdeMO():
         current_in = self.chargeCurrentRequest    # updated by CAN message 0x102 from the EV
         # process the current requests with a simple first-order filter
         if(current_in > 0):   
-            self.chargerCurrent = int(self.chargerCurrent * 0.9 + current_in * 0.1)     # normal 10-sample filter
+            self.current_out = int(self.chargerCurrent * 0.9 + current_in * 0.1)    # normal 10-sample filter
         else:
-            self.chargerCurrent = int(self.chargerCurrent * 0.2 + current_in * 0.8)     # more rapid shutdown
-        # estimate the charger voltage from LBC battery volts + (current * internal resistance)
+            self.current_out = int(self.chargerCurrent * 0.2 + current_in * 0.8)    # more rapid shutdown
+        # estimate the charger output voltage from LBC battery volts + (current * internal resistance)
         internalResistance = 0.5       # empirical value based on EV max power output
-        self.chargerVoltage = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.chargerCurrent
-        # the EV will be updated with these values when message 0x109 is next sent
+        self.voltage_out = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.current_out
+        # the EV will be updated with these values when message 0x109 is sent on next scan
 
     # send CAN message 0x108 to the EV with the Charger parameters (maxChargerVoltage, maxChargerCurrent).
     # this message must be send *after* CAN message 0x100 has been received from the EV with its parameter
@@ -152,9 +155,9 @@ class CHAdeMO():
         self.thresholdVoltage = int(min(self.maxBatteryVoltage, self.maxChargerVoltage))     # minimum of what EV 'needs' and what charger can supply
         mv_lo = int(self.maxChargerVoltage) & 0xFF
         mv_hi = int(self.maxChargerVoltage) >> 8
-        th_lo = int(self.thresholdVoltage) & 0xFF
-        th_hi = int(self.thresholdVoltage) >> 8
-        msg = can.Message(arbitration_id=0x108, data=[self.weldDetect, mv_lo, mv_hi, self.maxChargerCurrent, th_lo, th_hi, 0, 0], is_extended_id=False)
+        thr_lo = int(self.thresholdVoltage) & 0xFF
+        thr_hi = int(self.thresholdVoltage) >> 8
+        msg = can.Message(arbitration_id=0x108, data=[self.weldDetect, mv_lo, mv_hi, self.maxChargerCurrent, thr_lo, thr_hi, 0, 0], is_extended_id=False)
         try:
             self.canbus.send(msg)
         except can.CanError:
@@ -167,9 +170,9 @@ class CHAdeMO():
     # and after the charger emulation has been called to mimic the charger response to these requests          
     def canSend0x109(self):
         status = 4    # always report connector locked (adapter has no lock at present)
-        cv_lo = int(self.chargerVoltage) & 0xFF
-        cv_hi = int(self.chargerVoltage) >> 8
-        msg = can.Message(arbitration_id=0x109, data=[self.evseCdMversion, cv_lo, cv_hi, self.chargerCurrent, 0, status, 0, 0], is_extended_id=False)
+        cv_lo = int(self.voltage_out) & 0xFF
+        cv_hi = int(self.voltage_out) >> 8
+        msg = can.Message(arbitration_id=0x109, data=[self.evseCdMversion, cv_lo, cv_hi, self.current_out, 0, status, 0, 0], is_extended_id=False)
         try:
             self.canbus.send(msg)
         except can.CanError:
