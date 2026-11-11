@@ -380,7 +380,10 @@ class hardwareInterface():
         self.evseCdMversion = 1             # CAN-ID 0x109 - EVSE CHAdeMO version (0= <0.9, 1=0.9/1.0/1.1, 2=1.2/2+)
         self.chargerVoltage = 0             # actual voltage and current being delivered in response to 
         self.chargerCurrent = 0             # the EV 0x102 requests in the (emulated) charging loop
-
+        
+        self.voltage_out = 0    # use these values with 0x109 to the EV, rather than self.chargerVoltage and
+        self.current_out = 0    # self.chargerCurrent, otherwise decoding 0x109 doesn't print any difference
+                   
         # end of CHAdeMO current variables
 
         self.simulatedSoc = 20.0    # percent
@@ -551,9 +554,6 @@ class hardwareInterface():
         lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
         return lbcVolts
      
-    self.voltage_out = 0    # use these values with 0x109 to the EV, rather than self.chargerVoltage and
-    self.current_out = 0    # self.chargerCurrent, otherwise decoding 0x109 doesn't print any difference
-                   
     def emulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
         # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
         # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
