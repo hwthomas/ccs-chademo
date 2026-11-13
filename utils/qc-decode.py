@@ -105,7 +105,7 @@ class can_decode():
 
             new_value = message.data[6]
             if(self.socPercentFactor != new_value):
-                self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                self.addToTrace("0x100: socPercentFactor = %d " % new_value)
                 self.socPercentFactor = new_value
 
 
@@ -128,9 +128,9 @@ class can_decode():
 
         if message.arbitration_id == 0x102:                 # CAN-ID 0x102
             new_value = message.data[0]
-            if(self.evCdMversion != new_value):             # EV CHAdeMO version
-                self.addToTrace("0x102 evCdMversion = %X" % new_value)
-                self.evCdMversion = new_value
+            if(self.evCdMversion != new_value):                             # 0 = CdM < 0.9
+                self.addToTrace("0x102: evCdMversion = %X" % new_value)      # 1 = CdM = 0.9
+                self.evCdMversion = new_value                               # 2 = CdM = 1.2+
                     
             new_value = int(message.data[1]) + int(message.data[2])*256
             if(self.targetBatteryVoltage != new_value):
@@ -227,14 +227,13 @@ if __name__ == "__main__":
     can_file = sys.argv[1]                  # select first argument for log file name
     print("Opening log file ", can_file)
     with open(can_file) as file:
-        for line in file:                   # iterate through each line in the file
-            items = line.split(' ')         # <list> of <space> separated <str>
-            is_comment = items[0] == '#'    # check first character of first item in line
+        for line in file:                   # iterate through each line (as string) in the file
+            is_comment = (line[0] == '#')   # check first character of each line
             if is_comment:
                 comment = line.rstrip('\n') # remove last '\n'
                 cdc.addToTrace(comment)     # print comment less final '\n'
                 continue                    # and ignore for decoding purposes
-
+            items = line.split(' ')         # <list> of <space> separated <str>
             ts = items[0]                   # extract timestamp from (non-comment) log file item
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[2], 'utf-8'), 16)     # ditto for data length code (dlc)
