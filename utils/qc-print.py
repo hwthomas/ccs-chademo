@@ -227,25 +227,27 @@ try:
     cdm = CHAdeMO()                                 # create CHAdeMO class and variables
     for scan in range(0, 660):                      # loop for ~20+ Sec at ~31mS per scan
         cdm.readEVchargePermit()                    # poll EVchargePermit GPIO input (signal k) on each scan
-        message = cdm.canbus.recv(0)                # non-blocking check for CHAdeMO CAN-bus messages
+        if(cdm.evChargePermit == 1):                # enable EV contactors when EV sets ChargePermit
+            cdm.SetSS2_on()
+        else:
+            cdm.SetSS2_Off()
+        
+        message = cdm.canbus.recv(0)                # check (non-blocking) for CHAdeMO CAN-bus messages
         if message:
             print_message(message)
             cdm.decode(message)                     # update CHAdeMO variables from message
-            cdm.emulateChargerResponse()            # pretend a charger has sent a response
+            cdm.emulateChargerResponse()            # emulate charger response to current/volt requests
 
-            if(message.arbitration_id == 0x100):    # send message 0x108 after 0x100 received
-                cdm.canSend0x108()  
-            if(message.arbitration_id == 0x102):    # send message 0x109 after 0x102 received
+            if(message.arbitration_id == 0x102):    # send message 0x108 and 0x109 after 0x102 received
+                cdm.canSend0x108()
+                time.sleep(0.002)   # delay 2mS  
                 cdm.canSend0x109()
+                
 
         # actions initiated at specific scan times  (scan_count * 30mS)               
-        if(scan == 3):
-            cdm.setSS1_On()         # after ~100mS enable CAN comms on EV
-        if(scan == 150):
-            cdm.setSS2_On()         # after ~05secs enable EV contactors
-        if(scan == 500):
-            cdm.setSS2_Off()        # after ~15secs disable EV contactors
-        if(scan == 600):
+        if(scan == 0):
+            cdm.setSS1_On()         # immediately enable CAN comms on EV
+         if(scan == 600):
             cdm.setSS1_Off()        # after ~18secs disable CAN comms on EV
 
         # pause 30mS, then loop for next message or until Ctrl-C
