@@ -124,9 +124,6 @@ class hardwareInterface():
 # These are the CHAdeMO sequence signals, which need to
 #  be activated in the fsmCdM code at appropriate points
 #
-    self.SS1 = 0    # current state for d1/SS1 output
-    self.SS2 = 0    # ditto d2/SS2 output
-
     def setSS1_On(self):
         if(self.SS1 == 0):      # if changing state...
             self.addToTrace("Switching Charge Signal SS1 ON")
@@ -355,6 +352,9 @@ class hardwareInterface():
 
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
+
+        self.SS1 = 0    # current state for d1/SS1 output
+        self.SS2 = 0    # ditto d2/SS2 output
 
         self.evChargePermit = None          # input of signal_k (active LOW) via GPIO
         self.canActive = False              # set True once CAN messages are seen
