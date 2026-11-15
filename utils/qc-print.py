@@ -183,21 +183,32 @@ class CHAdeMO():
             self.canbus.shutdown()
             exit()
      
+    self.SS1 = 0    # current state for d1/SS1 output
+    self.SS2 = 0    # ditto d2/SS2 output
+    
     # define GPIO API for d1/SS1, d2/SS hardware interlocks and evChargePermit
     def setSS1_On(self):
-        print("# Switching Charge Signal SS1 ON")
+        if(self.SS1 == 0):      # if changing state...
+            print("# Switching Charge Signal SS1 ON")
+        self.SS1 = 1
         self.GPIO.output(pinSS1, GPIO.HIGH)
 
     def setSS1_Off(self):
-        print("# Switching Charge Signal SS1 OFF")
+        if(self.SS1 == 1):      # if changing state...
+            print("# Switching Charge Signal SS1 OFF")
+        self.SS1 = 0
         self.GPIO.output(pinSS1, GPIO.LOW)
- 
+        
     def setSS2_On(self):
-        print("# Switching Charge Signal SS2 ON")
+        if(self.SS2 == 0):      # if changing state...
+            print("# Switching Charge Signal SS2 ON")
+        self.SS2 = 1
         self.GPIO.output(pinSS2, GPIO.HIGH)
 
     def setSS2_Off(self):
-        print("# Switching Charge Signal SS2 OFF")
+        if(self.SS2 == 1):      # if changing state...
+            print("# Switching Charge Signal SS2 OFF")
+        self.SS2 = 0
         self.GPIO.output(pinSS2, GPIO.LOW)
 
     def readEVchargePermit(self):               # read GPIO input when called
@@ -225,12 +236,12 @@ def print_message(message):
     
 try:
     cdm = CHAdeMO()                                 # create CHAdeMO class and variables
-    for scan in range(0, 660):                      # loop for ~20+ Sec at ~31mS per scan
+    for scan in range(0, 450):                      # loop for ~15+ Sec at ~31mS per scan
         cdm.readEVchargePermit()                    # poll EVchargePermit GPIO input (signal k) on each scan
         if(cdm.evChargePermit == 1):                # enable EV contactors when EV sets ChargePermit
-            cdm.SetSS2_on()
+            cdm.setSS2_on()
         else:
-            cdm.SetSS2_Off()
+            cdm.setSS2_Off()
         
         message = cdm.canbus.recv(0)                # check (non-blocking) for CHAdeMO CAN-bus messages
         if message:
@@ -247,8 +258,8 @@ try:
         # actions initiated at specific scan times  (scan_count * 30mS)               
         if(scan == 0):
             cdm.setSS1_On()         # immediately enable CAN comms on EV
-         if(scan == 600):
-            cdm.setSS1_Off()        # after ~18secs disable CAN comms on EV
+         if(scan == 430):
+            cdm.setSS1_Off()        # after ~14secs disable CAN comms on EV
 
         # pause 30mS, then loop for next message or until Ctrl-C
         time.sleep(0.03) 

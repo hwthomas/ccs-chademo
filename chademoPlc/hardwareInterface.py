@@ -124,29 +124,40 @@ class hardwareInterface():
 # These are the CHAdeMO sequence signals, which need to
 #  be activated in the fsmCdM code at appropriate points
 #
+    self.SS1 = 0    # current state for d1/SS1 output
+    self.SS2 = 0    # ditto d2/SS2 output
+
     def setSS1_On(self):
-        self.addToTrace("Switching Charge Signal SS1 ON")
-        if (getConfigValue("digital_output_device")=="rpi_gpio"):
-            GPIO.output(pinSS1, GPIO.HIGH)
-        self.outvalue |= 2
+        if(self.SS1 == 0):      # if changing state...
+            self.addToTrace("Switching Charge Signal SS1 ON")
+            self.SS1 = 1
+            self.outvalue |= 2
+            if (getConfigValue("digital_output_device")=="rpi_gpio"):
+                GPIO.output(pinSS1, GPIO.HIGH)
 
     def setSS1_Off(self):
-        self.addToTrace("Switching Charge Signal SS1 OFF")
-        if (getConfigValue("digital_output_device")=="rpi_gpio"):
-            GPIO.output(pinSS1, GPIO.LOW)
-        self.outvalue &= ~2
+        if(self.SS1 == 1):      # if changing state...
+            self.addToTrace("Switching Charge Signal SS1 OFF")
+            self.SS1 = 0
+            self.outvalue &= ~2
+            if (getConfigValue("digital_output_device")=="rpi_gpio"):
+                GPIO.output(pinSS1, GPIO.LOW)
  
     def setSS2_On(self):
-        self.addToTrace("Switching Charge Signal SS2 ON")
-        if (getConfigValue("digital_output_device")=="rpi_gpio"):
-            GPIO.output(pinSS2, GPIO.HIGH)
-        self.outvalue |= 4
+        if(self.SS2 == 0):      # if changing state...
+            self.addToTrace("Switching Charge Signal SS2 ON")
+            self.SS2 = 1
+            self.outvalue |= 4
+            if (getConfigValue("digital_output_device")=="rpi_gpio"):
+                GPIO.output(pinSS2, GPIO.HIGH)
 
     def setSS2_Off(self):
-        self.addToTrace("Switching Charge Signal SS2 OFF")
-        if (getConfigValue("digital_output_device")=="rpi_gpio"):
-            GPIO.output(pinSS2, GPIO.LOW)
-        self.outvalue &= ~4
+        if(self.SS2 == 1):      # if changing state...
+            self.addToTrace("Switching Charge Signal SS2 OFF")
+            self.SS2 = 0
+            self.outvalue &= ~4
+            if (getConfigValue("digital_output_device")=="rpi_gpio"):
+                GPIO.output(pinSS2, GPIO.LOW)
 
     def setWdog_On(self):
         if (getConfigValue("digital_output_device")=="rpi_gpio"):
