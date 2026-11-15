@@ -767,9 +767,9 @@ if __name__ == "__main__":
             hw.emulateChargerResponse()     # emulate charger response to current & voltage requests
 
             if(hw.evChargePermit == 1):     # automatically enable EV contactors when EV sets ChargePermit
-                hw.SetSS2_on()
+                hw.setSS2_on()
             else:
-                hw.SetSS2_Off()
+                hw.setSS2_Off()
 
             # actions initiated at specific scan times  (scan_count * 30mS)               
             if (scan==0):           # print heading at start of log
