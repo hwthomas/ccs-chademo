@@ -234,7 +234,7 @@ try:
         
         message = cdm.canbus.recv(0)                # check (non-blocking) for CHAdeMO CAN-bus messages
         if message:
-            print_message(message)
+            print_message(message)                  # format and print message as above
             cdm.decode(message)                     # update CHAdeMO variables from message
             cdm.emulateChargerResponse()            # emulate charger response to current/volt requests
 
