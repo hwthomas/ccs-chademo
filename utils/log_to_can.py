@@ -46,8 +46,7 @@ if __name__ == "__main__":
             is_comment = (line[0] == '#')   # check first character of first item in line
             if is_comment:
                 comment = line.rstrip('\n') # remove last '\n'
-                cdc.addToTrace(comment)     # print comment less final '\n'
-                continue                    # and ignore for decoding purposes
+                continue                    # and ignore for CAN message purposes
 
             items = line.split(',')         # <list> of comma separated <str>
             currentTime_ms = round(time.time()*1000)
