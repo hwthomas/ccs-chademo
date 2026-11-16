@@ -239,7 +239,7 @@ try:
     for scan in range(0, 450):                      # loop for ~15+ Sec at ~31mS per scan
         cdm.readEVchargePermit()                    # poll EVchargePermit GPIO input (signal k) on each scan
         if(cdm.evChargePermit == 1):                # enable EV contactors when EV sets ChargePermit
-            cdm.setSS2_on()
+            cdm.setSS2_On()
         else:
             cdm.setSS2_Off()
         
