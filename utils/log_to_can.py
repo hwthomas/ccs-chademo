@@ -35,6 +35,7 @@ if __name__ == "__main__":
     # open and read in each line of the CAN log
     # Note: 'line' is a string of the *whole* line, including the separators
     # eg   "-1688467643250712,00000109,false,Rx,0,8,01,7B,01,64,01,05,D7,24,"
+    # if a line starts with '#' it is a comment and is skipped
 
     can_file = sys.argv[1]                  # select log file to read from
 
@@ -42,9 +43,14 @@ if __name__ == "__main__":
     with open(can_file) as file:
         startTime_ms = round(time.time()*1000)
         for line in file:                   # iterate through each line in the file
-            currentTime_ms = round(time.time()*1000)
+            is_comment = (line[0] == '#')   # check first character of first item in line
+            if is_comment:
+                comment = line.rstrip('\n') # remove last '\n'
+                cdc.addToTrace(comment)     # print comment less final '\n'
+                continue                    # and ignore for decoding purposes
 
             items = line.split(',')         # <list> of comma separated <str>
+            currentTime_ms = round(time.time()*1000)
             ts = currentTime_ms - startTime_ms          # timestamp for CAN message
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
             dlc = int(bytes(items[5], 'utf-8'), 16)     # ditto for data length code (dlc)
