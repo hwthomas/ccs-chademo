@@ -694,7 +694,7 @@ class hardwareInterface():
                 # self.setChargerParameters(self.maxBatteryVoltage, self.maxChargerCurrent)
                 # self.setChargerVoltageAndCurrent(self.chargerVoltage, self.chargerCurrent)
                 self.canSend0x108() 
-                time.sleep(0.002)
+                sleep(0.002)
                 self.canSend0x109()
  
             if(message.arbitration_id == 0x108):    # we don't normally receive 0x108, only send via setChargerParameters
