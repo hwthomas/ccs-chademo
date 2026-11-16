@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     # open and read in each line of the CAN log
     # Note: 'line' is a string of the *whole* line, including the separators
-    # eg   "-1688467625313174 102 08 02 9A 01 6D 00 81 8F 00"
+    # eg   "13397.0 102 08 02 9A 01 00 00 98 01 00"
     # if a line starts with '#' it is a comment and is added to the trace, then skipped
 
     can_file = sys.argv[1]                  # select first argument for log file name
@@ -233,6 +233,7 @@ if __name__ == "__main__":
                 comment = line.rstrip('\n') # remove last '\n'
                 cdc.addToTrace(comment)     # print comment less final '\n'
                 continue                    # and ignore for decoding purposes
+
             items = line.split(' ')         # <list> of <space> separated <str>
             ts = items[0]                   # extract timestamp from (non-comment) log file item
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
