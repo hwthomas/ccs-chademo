@@ -184,7 +184,7 @@ class can_decode():
         if message.arbitration_id == 0x109:                 # CAN-ID 0x109
             new_value = message.data[0]
             if(self.evseCdMversion != new_value):           # EVSE CHAdeMO version
-                self.addToTrace("0x109 evseCdMversion = %X" % new_value)
+                self.addToTrace("0x109: evseCdMversion = %X" % new_value)
                 self.evseCdMversion = new_value
                     
             new_value = int(message.data[1]) + int(message.data[2])*256
