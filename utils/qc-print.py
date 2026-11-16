@@ -258,7 +258,8 @@ try:
         # actions initiated at specific scan times  (scan_count * 30mS)               
         if(scan == 0):
             cdm.setSS1_On()         # immediately enable CAN comms on EV
-         if(scan == 430):
+        
+        if(scan == 430):
             cdm.setSS1_Off()        # after ~14secs disable CAN comms on EV
 
         # pause 30mS, then loop for next message or until Ctrl-C
