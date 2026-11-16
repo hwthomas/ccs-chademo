@@ -1,0 +1,67 @@
+# ZE1hardwareInterface test
+(ccs) hwt@rpi-pev:~/github/ccs-chademo/chademoPlc $ python hardwareInterface.py 
+
+  GPIO.setup(pin, GPIO.OUT)               # set up each of the GPIO pins as outputs
+Bringing up CAN (channel can0) at 500kbps...
+CAN-bus channel 'can0' opened successfully
+Testing hardwareInterface for ~20s...
+[0ms] [CHADEMO_INTERFACE] Setting charger 'available' Voltage = 500 V
+[0ms] [CHADEMO_INTERFACE] Setting charger 'available' Current = 135 A
+[0ms] [CHADEMO_INTERFACE] GPIO.pin_k evChargePermit = 0
+[1ms] # Start polling hardwareInterface to read GPIO inputs and monitor CAN-bus
+[1ms] [CHADEMO_INTERFACE] Switching Charge Signal SS1 ON
+[91ms] [CHADEMO_INTERFACE] 0x100: minChargerCurrent = 6 A
+[91ms] [CHADEMO_INTERFACE] 0x100: minBatteryVoltage = 0 V
+[91ms] [CHADEMO_INTERFACE] 0x100 maxBatteryVoltage = 435 V
+[92ms] [CHADEMO_INTERFACE] 0x100 socPercentFactor = 240 
+[122ms] [CHADEMO_INTERFACE] 0x101 maximum charge time = 0 mins
+[122ms] [CHADEMO_INTERFACE] 0x101 estimated charge time = 0 mins
+[122ms] [CHADEMO_INTERFACE] 0x101 ratedCapacity = 0 kWh
+[152ms] [CHADEMO_INTERFACE] 0x102 evCdMversion = 2
+[152ms] [CHADEMO_INTERFACE] 0x102 targetBatteryVoltage = 410 V
+[152ms] [CHADEMO_INTERFACE] 0x102 evFaultBits = 0
+[152ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 80
+[152ms] [CHADEMO_INTERFACE] 0x102 evStateOfCharge = 1 %
+[185ms] [CHADEMO_INTERFACE] 0x100 socPercentFactor = 100 
+[215ms] [CHADEMO_INTERFACE] 0x101 ratedCapacity = 53 kWh
+[246ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 88
+[246ms] [CHADEMO_INTERFACE] 0x102 evStateOfCharge = 1 %
+[2127ms] [CHADEMO_INTERFACE] 0x102 evStateOfCharge = 33 %
+[2621ms] [CHADEMO_INTERFACE] 0x101 maximum charge time = 88 mins
+[2683ms] [CHADEMO_INTERFACE] GPIO.pin_k evChargePermit = 1
+[2683ms] [CHADEMO_INTERFACE] Switching Charge Signal SS2 ON
+[3638ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 89
+[4633ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 81
+[6250ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 1 A
+[6343ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 3 A
+[6437ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 5 A
+[6531ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 7 A
+[6655ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 9 A
+[6748ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 11 A
+[6842ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 13 A
+[6935ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 15 A
+[7029ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 17 A
+[7153ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 19 A
+[7247ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 21 A
+[7341ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 23 A
+[7434ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 25 A
+[7528ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 27 A
+[7652ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 29 A
+[7745ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 31 A
+[7839ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 32 A
+[7933ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 33 A
+[8026ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 34 A
+[8244ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 35 A
+[8431ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 36 A
+[8648ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 37 A
+[8712ms] [CHADEMO_INTERFACE] GPIO.pin_k evChargePermit = 0
+[8712ms] [CHADEMO_INTERFACE] Switching Charge Signal SS2 OFF
+[8742ms] [CHADEMO_INTERFACE] 0x102 chargeCurrentRequest = 0 A
+[8743ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 84
+[9737ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 8C
+[12846ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 9C
+[13190ms] [CHADEMO_INTERFACE] Switching Charge Signal SS1 OFF
+[13344ms] [CHADEMO_INTERFACE] 0x102 evStatusBits = 8C
+
+Shutting down hardwareInterface safely...
+hardwareInterface test finished.
