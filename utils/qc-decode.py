@@ -11,11 +11,11 @@
 #
 # below is a short extract from a can_print.py generated log...
 #
-#  Timestamp uS    ID  dlc  data[0..7] as hex bytes
+#  Timestamp mS    ID  dlc  data[0..7] as hex bytes
 #     [0]          [1][2][3][4][5][6][7][8][9][10]
-#-1688467625333184 100 08 06 00 00 00 B3 01 FF 00
-#-1688467625323152 101 08 00 E4 00 00 00 00 00 00
-#-1688467625313174 102 08 02 9A 01 6D 00 81 8F 00 
+#    3152.0        100 08 06 00 00 00 B3 01 FF 00
+#    3174.0        101 08 00 E4 00 00 00 00 00 00
+#    3184.0        102 08 02 9A 01 6D 00 81 8F 00 
 #
 import can      # for message structure  
 import time     # for sleep and timings
@@ -155,7 +155,7 @@ class can_decode():
             if self.socPercentFactor > 0:       # (used in this next calculation)
                 new_value = message.data[6] / self.socPercentFactor * 100
                 if(self.evStateOfCharge != new_value):
-                    self.addToTrace("0x102 evStateOfCharge = %d %%" % new_value)
+                    self.addToTrace("0x102: evStateOfCharge = %d %%" % new_value)
                     self.evStateOfCharge = new_value
 
 
