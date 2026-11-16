@@ -693,43 +693,6 @@ class hardwareInterface():
                 sleep(0.002)
                 self.canSend0x109()
  
-            if(message.arbitration_id == 0x108):    # we don't normally receive 0x108, only send via setChargerParameters
-                new_value = message.data[0]         # but decode it when we do receive it
-                if(self.weldingDetection != new_value):
-                    self.addToTrace("0x108: weldingDetection = %X" % new_value)
-                    self.weldingDetection = new_value
-                     
-                new_value = int(message.data[1]) + int(message.data[2])*256
-                if(self.maxChargerVoltage != new_value):
-                    self.addToTrace("0x108: maxChargerVoltage = %d V" % new_value)
-                    self.maxChargerVoltage = new_value
-                    
-                new_value = message.data[3]
-                if(self.maxChargerCurrent != new_value):
-                    self.addToTrace("0x108: maxChargerCurrent = %d A" % new_value)
-                    self.maxChargerCurrent = new_value
-
-                new_value = int(message.data[4]) + int(message.data[5])*256
-                if(self.thresholdVoltage != new_value):
-                    self.addToTrace("0x108: thresholdVoltage = %d V" % new_value)
-                    self.thresholdVoltage = new_value
-
-            if(message.arbitration_id == 0x109):    # we don't normally receive 0x109, only send via canSend0x109 message
-                new_value = message.data[0]         # but decode it when we do receive it
-                if(self.evseCdMversion != new_value):
-                    self.addToTrace("0x109: evseCdMversion = %X" % new_value)
-                    self.evseCdMversion = new_value
-                    
-                new_value = int(message.data[1]) + int(message.data[2])*256
-                if(self.chargerVoltage != new_value):
-                    self.addToTrace("0x109: actual charger Voltage = %d V" % new_value)
-                    self.chargerVoltage = new_value
-
-                new_value = message.data[3]
-                if(self.chargerCurrent != new_value):
-                    self.addToTrace("0x109: actual charger Current = %d A" % new_value)
-                    self.chargerCurrent = new_value
-
         # if no CAN-ID 0x102 (chargeCurrentRequest) was received for over a second, time out and shut charging down
         if self.lastReceptionTime < (time() - 1):
             if self.accuMaxCurrent != 0:
@@ -775,7 +738,7 @@ if __name__ == "__main__":
             hw.simulateChargerResponse()    # simulate charger response to current & voltage requests
 
             if(hw.evChargePermit == 1):     # automatically enable EV contactors when EV sets ChargePermit
-                hw.setSS2_on()
+                hw.setSS2_On()
             else:
                 hw.setSS2_Off()
 
