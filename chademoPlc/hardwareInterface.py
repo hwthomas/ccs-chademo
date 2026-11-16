@@ -41,9 +41,7 @@ if (getConfigValue("charge_parameter_backend")=="chademo"):
     filters = [
        {"can_id": 0x100, "can_mask": 0x7FF, "extended": False},
        {"can_id": 0x101, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x108, "can_mask": 0x7FF, "extended": False},
-       {"can_id": 0x109, "can_mask": 0x7FF, "extended": False} ]
+       {"can_id": 0x102, "can_mask": 0x7FF, "extended": False}]
     try:
         canbus = can.Bus(interface="socketcan", channel="can0", can_filters = filters, receive_own_messages = True)
     except OSError:
@@ -299,8 +297,8 @@ class hardwareInterface():
         else:
             return True
 
-    def initPorts(self):        # no ports required, and CAN-bus already set up
-        self.canbus = canbus    # so just set up a class variable
+    def initPorts(self):        # no ports required
+        pass
 
     def __init__(self, callbackAddToTrace=None, callbackShowStatus=None, homeplughandler=None, mode=C_PEV_MODE):
         self.callbackAddToTrace = callbackAddToTrace
@@ -317,7 +315,7 @@ class hardwareInterface():
         # NB: only use this class variable after class has been created
         if (getConfigValue("charge_parameter_backend")=="chademo"):
             self.chademo_backend = True
-            self.canbus = canbus    # set up a class variable for canbus at the same time
+            self.canbus = canbus    # set up a class variable for canbus
         
         # The following conditional code enables (future) hardware charger extensions
         if (self.mode==C_EVSE_MODE):
@@ -352,9 +350,8 @@ class hardwareInterface():
 
                                 # bit 4 = pinPowerRelay (off = 0; on = 0x10)
                                 # bit 5 = pinRelay2     (off = 0; on = 0x20)
-
-        self.SS1 = 0    # current state for d1/SS1 output
-        self.SS2 = 0    # ditto d2/SS2 output
+        self.SS1 = 0            # current state for d1/SS1 output (convenience)
+        self.SS2 = 0            # ditto d2/SS2 output
 
         self.evChargePermit = None          # input of signal_k (active LOW) via GPIO
         self.canActive = False              # set True once CAN messages are seen
@@ -362,10 +359,9 @@ class hardwareInterface():
         # The following class variables are for CAN-bus comms to/from the CHAdeMO EV
         # some are initialised to valid values because they may be used before CAN has been updated
  
-        # EV tells the charger the maximum voltage and current it 'needs' via CAN-ID 0x100
-        self.minChargerCurrent = None       # CAN-ID 0x100 
+        self.minChargerCurrent = None       # CAN-ID 0x100 - EV requests the maximum Volts/Amps it 'needs'
         self.minBatteryVoltage = None       
-        self.maxBatteryVoltage = 0          # initialise to valid values
+        self.maxBatteryVoltage = 0          # initialise to valid values (see above)
         self.socPercentFactor = 100
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101 (calculated by EV)
@@ -381,9 +377,9 @@ class hardwareInterface():
 
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
-        # Charger tells the EV the maximum volts and amps available (ie that it can supply) via CAN-ID 0x108
-        self.weldingDetection = 0           # CAN-ID 0x108      
-        self.maxChargerVoltage = 0          # EVSE Maximum Available values (fixed for each charger)
+        
+        self.weldingDetection = 0           # CAN-ID 0x108 - EVSE tells the EV the maximum volts and amps available      
+        self.maxChargerVoltage = 0          # EVSE Maximum Available values (fixed for a given charger)
         self.maxChargerCurrent = 0  
         self.thresholdVoltage = 0           # this is the maximum charger will use (for protection of the EV)
 
@@ -564,7 +560,7 @@ class hardwareInterface():
         lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
         return lbcVolts
      
-    def emulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
+    def simulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
         # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
         # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
         # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
@@ -593,10 +589,10 @@ class hardwareInterface():
         msg = can.Message(arbitration_id=0x108, data=[self.weldingDetection, self.maxChargerVoltage & 0xFF, self.maxChargerVoltage >> 8, self.maxChargerCurrent, thr_lo, thr_hi, 0, 0], is_extended_id=False)
         self.canbus.send(msg)
     
-    # send CAN message 0x109 to the EV with charging loop actual values (self.chargerVoltage, self.chargerCurrent)
+    # send CAN message 0x109 to the EV with charging loop actual values (self.voltage_out, self.current_out)
     # this message must be send *after* CAN message 0x102 from the EV with its voltage and current requests, which will be
     # sent via the simulated charger response function to produce the 'actual' charger output current and voltage 
-    # self.voltage_out and self.current_out are picked up from the charger emulation above
+    # self.voltage_out and self.current_out are picked up from the charger simulation above
     def canSend0x109(self):
         # construct CAN message 0x109 and send it once CAN-ID 0x102 has been received
         status = 4    # always report connector locked (adapter has no lock at present)
@@ -744,15 +740,16 @@ class hardwareInterface():
 pass    # end of class hardwareInterface
 
 
-# This specific 'addToTrace' function is used when hardwareInterface (test) class instance is created
+# -----------------------------     Start of main program test loop      ----------------------------
+
 startTime_ms = round(time()*1000)
+
+# This specific 'addToTrace' function is used when hardwareInterface (test) class instance is created
 
 def hwAddToTrace(s):
     currentTime_ms = round(time()*1000)
     dT_ms = currentTime_ms - startTime_ms
     print("[" + str(dT_ms) + "ms] " + s)
-
-# -----------------------------     Start of main program test loop      ----------------------------
 
 if __name__ == "__main__":
     # The test routine here is set up for different values to be used at different points of the test.
@@ -775,7 +772,7 @@ if __name__ == "__main__":
     try:
         for scan in range(0, 450):      
             hw.mainfunction()               # poll hardwareInterface (GPIO and CAN-bus) on each scan
-            hw.emulateChargerResponse()     # emulate charger response to current & voltage requests
+            hw.simulateChargerResponse()    # simulate charger response to current & voltage requests
 
             if(hw.evChargePermit == 1):     # automatically enable EV contactors when EV sets ChargePermit
                 hw.setSS2_on()
