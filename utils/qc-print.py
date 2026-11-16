@@ -58,7 +58,10 @@ class CHAdeMO():
     def __init__(self):
         self.GPIO = GPIO
         self.canbus = canbus
-
+        
+        self.SS1 = 0    # current state for d1/SS1 output
+        self.SS2 = 0    # ditto d2/SS2 output
+    
         self.evChargePermit = 0
         self.minChargeCurrent = 0       # CAN-ID 0x100
         self.minBatteryVoltage  = 0
@@ -183,9 +186,6 @@ class CHAdeMO():
             self.canbus.shutdown()
             exit()
      
-    self.SS1 = 0    # current state for d1/SS1 output
-    self.SS2 = 0    # ditto d2/SS2 output
-    
     # define GPIO API for d1/SS1, d2/SS hardware interlocks and evChargePermit
     def setSS1_On(self):
         if(self.SS1 == 0):      # if changing state...
