@@ -1,4 +1,6 @@
 # ZE1hardwareInterface test
+# Dashboard SOC% = 33% LBC Volts = 349.5v
+
 (ccs) hwt@rpi-pev:~/github/ccs-chademo/chademoPlc $ python hardwareInterface.py 
 
   GPIO.setup(pin, GPIO.OUT)               # set up each of the GPIO pins as outputs
