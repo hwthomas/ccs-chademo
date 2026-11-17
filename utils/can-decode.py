@@ -92,7 +92,7 @@ class can_decode():
 
             new_value = message.data[6]
             if(self.socPercentFactor != new_value):
-                self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                self.addToTrace("0x100: socPercentFactor = %d " % new_value)
                 self.socPercentFactor = new_value
 
         if message.arbitration_id == 0x101:
@@ -125,7 +125,7 @@ class can_decode():
             if self.socPercentFactor > 0:       # (it is used in the next calculation)
                 new_value = message.data[6] / self.socPercentFactor * 100
                 if(self.evStateOfCharge != new_value):
-                    self.addToTrace("0x102 evStateOfCharge = %d" % new_value)
+                    self.addToTrace("0x102: evStateOfCharge = %d" % new_value)
                     self.evStateOfCharge = new_value
 
         if message.arbitration_id == 0x108:
@@ -199,18 +199,23 @@ if __name__ == "__main__":
         exit()
 
     print("Testing can_decode using CAN-bus input...")
-
     # create a can_decode instance, using cbAddToTrace and cbShowStatus functions above
     cdc = can_decode(cdcAddToTrace, cdcShowStatus)
+    try:
+        with bus:           # this is the hardware channel 'can0' created above
+            print('Ready')
+            while True:
+                msg = bus.recv(0)   # blocking wait for a canbus message
+                if msg:
+                    # decode the message using cdc.decode function
+                    cdc.decode(msg)
 
-    with bus:           # this is the hardware channel 'can0' created above
-        print('Ready')
-        while True:
-            msg = bus.recv(0)   # blocking wait for a canbus message
-            if msg:
-                # decode the message using cdc.decode function
-                cdc.decode(msg)
-
-            time.sleep(0.01)      # loop every 10mS until end of data reached 
+                time.sleep(0.01)      # loop every 10mS until end of data reached 
     
-    print("finished decoding data input ")
+    except KeyboardInterrupt:
+        # Catch keyboard interrupt
+        print("# Keyboard interrupt ") 
+
+    print("# Shutting bus and CAN0 down") 
+    bus.shutdown()
+    os.system("sudo /sbin/ip link set can0 down")
