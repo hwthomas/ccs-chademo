@@ -58,8 +58,6 @@ if __name__ == "__main__":
                 data[i-6] = int(items[i], 16)   # convert items to hex integers
 
             msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
-            # print(msg)    # debug only
-
             try:
                 bus.send(msg)
                 time.sleep(0.05)                # wait 50mS before next message

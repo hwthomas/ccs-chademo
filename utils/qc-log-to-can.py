@@ -2,10 +2,10 @@
 # This program reads a CAN log from a file written in can-print format &
 # generates CAN messages to be sent via the Waveshare CAN HAT on the RPi.
 #
-# It is a special version of log_to-can which reads can_print/qc-print logs only
+# It is a special version of log_to_can.py which reads can_print/qc-print logs only
 #
 # the log file to be decoded is read as command-line argument[1] 
-# ie run command:- 'python log_decode.py leaf.log'
+# ie run command:- 'python qc-log-to-can.py leaf.log'
 #
 # below is a short extract from a can_print.py generated log...
 #
@@ -61,8 +61,6 @@ if __name__ == "__main__":
                 data[i-3] = int(items[i], 16)           # convert items to hex integers
 
             msg = can.Message(timestamp=ts, arbitration_id=id, dlc=dlc, data=data, is_extended_id = False)
-            # print(msg)    # debug only
-
             try:
                 bus.send(msg)
                 time.sleep(0.05)                # wait 50mS before next message

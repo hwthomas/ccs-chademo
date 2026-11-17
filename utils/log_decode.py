@@ -139,7 +139,7 @@ class can_decode():
         if message.arbitration_id == 0x102:                 # CAN-ID 0x102
             new_value = message.data[0]
             if(self.evCdMversion != new_value):                             # 0 = CdM < 0.9
-                self.addToTrace("0x102 evCdMversion = %X" % new_value)      # 1 = CdM = 0.9,1.0,1.1
+                self.addToTrace("0x102: evCdMversion = %X" % new_value)     # 1 = CdM = 0.9,1.0,1.1
                 self.evCdMversion = new_value                               # 2 = CdM = 1.2+
                     
             new_value = int(message.data[1]) + int(message.data[2])*256
@@ -165,7 +165,7 @@ class can_decode():
                 if self.socPercentFactor > 0:       # (used in the next calculation)
                     new_value = message.data[6] / self.socPercentFactor * 100
                     if(self.evStateOfCharge != new_value):
-                        self.addToTrace("0x102 evStateOfCharge = %d %%" % new_value)
+                        self.addToTrace("0x102: evStateOfCharge = %d %%" % new_value)
                         self.evStateOfCharge = new_value
 
         if message.arbitration_id == 0x108:                 # CAN-ID 0x108
@@ -236,6 +236,7 @@ if __name__ == "__main__":
                 comment = line.rstrip('\n') # remove last '\n'
                 cdc.addToTrace(comment)     # print comment less final '\n'
                 continue                    # and ignore for decoding purposes
+
             items = line.split(',')         # <list> of comma separated <str>
             ts = items[0]                   # extract timestamp from (non-comment) log file item
             id = int(bytes(items[1], 'utf-8'), 16)      # extract arbitration id as an <int>
