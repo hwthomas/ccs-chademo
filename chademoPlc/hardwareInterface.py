@@ -534,54 +534,7 @@ class hardwareInterface():
             if (self.plugged_in is not None and self.plugged_in == False and
                     self.inletVoltage < 50):
                 sys.exit(0)
-    
-    # The next two functions are only called by the charger simulation function, and by the test routine __main__ 
-    # note that they depend on CAN variables being compared, so these are initialised to valid values, and NOT 'None'
-    def setChargerParameters(self, maxVoltage, maxCurrent):
-        # if maxVoltage or maxCurrent has changed, log this to trace
-        if(self.maxChargerVoltage != maxVoltage):
-            self.addToTrace("Setting charger _available_ Voltage = %d V" % maxVoltage)
-            self.maxChargerVoltage = int(maxVoltage)
-        if(self.maxChargerCurrent != maxCurrent):
-            self.addToTrace("Setting charger _available_ Current = %d A" % maxCurrent)
-            self.maxChargerCurrent = int(maxCurrent)
-
-    def setChargerVoltageAndCurrent(self, voltageNow, currentNow):
-        # if voltageNow or currentNow has changed, log this to trace
-        if(self.chargerVoltage != voltageNow):
-            self.addToTrace("Setting charger _actual_ Voltage = %d V" % voltageNow)
-            self.chargerVoltage = int(voltageNow)
-        if(self.chargerCurrent != currentNow):
-            self.addToTrace("Setting charger _actual_ Current = %d A" % currentNow)
-            self.chargerCurrent = int(currentNow)
-
-    def estimatedLBCvolts(self, soc_percent):
-        # linear interpolation between 338v at SOC=8% and 398v at SOC=100%
-        lbcVolts = int(338 + (398-338) * (soc_percent-8) / (100 - 8))
-        return lbcVolts
-     
-    def simulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
-        # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
-        # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
-        # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
-        # The estimated charger outputs will then be sent back to the EV in CAN message 0x109.
-        # The targetBatteryVoltage request from the EV appears not to change throughout the charging cycle.
-        # Simulate fast shutdown by setting output current filter to a fast rate if zero current is requested
-        # Get the volts and amps inputs from the EV values requested in message 0x102
-        current_in = self.chargeCurrentRequest    # updated by CAN message 0x102 from the EV
-        # process the current requests with a simple first-order filter
-        if(current_in > 0):   
-            self.current_out = int(self.chargerCurrent * 0.9 + current_in * 0.1)    # normal 10-sample filter
-        else:
-            self.current_out = int(self.chargerCurrent * 0.2 + current_in * 0.8)    # more rapid shutdown
-
-        # estimate the charger output voltage from LBC battery volts + (current * internal resistance)
-        internalResistance = 0.5       # empirical value based on EV max power output and battery voltage
-        self.voltage_out = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.current_out
-        
-        # update the charger _actual_ values for when message 0x109 is sent on next scan
-        self.setChargerVoltageAndCurrent(self.voltage_out, self.current_out)
-
+ 
     # send CAN message 0x108 to the EV with the Charger parameters (self.maxChargerVoltage, self.maxChargerCurrent)
     # this message must be send *after* CAN message 0x100 has been received from the EV with *its* parameters           
     def canSend0x108(self):
@@ -630,29 +583,29 @@ class hardwareInterface():
 
                 new_value = int(message.data[4]) + int(message.data[5])*256
                 if(self.maxBatteryVoltage != new_value):
-                    self.addToTrace("0x100 maxBatteryVoltage = %d V" % new_value)
+                    self.addToTrace("0x100: maxBatteryVoltage = %d V" % new_value)
                     self.maxBatteryVoltage = new_value
 
                 new_value = message.data[6]
                 if(self.socPercentFactor != new_value):
-                    self.addToTrace("0x100 socPercentFactor = %d " % new_value)
+                    self.addToTrace("0x100: socPercentFactor = %d " % new_value)
                     self.socPercentFactor = new_value
 
 
             if message.arbitration_id == 0x101:
                 new_value = message.data[2]
                 if(self.maxChargeTimeMins != new_value):
-                    self.addToTrace("0x101 maximum charge time = %d mins" % new_value)
+                    self.addToTrace("0x101: maximum charge time = %d mins" % new_value)
                     self.maxChargeTimeMins = new_value
 
                 new_value = message.data[3]
                 if(self.estChargeTimeMins != new_value):
-                    self.addToTrace("0x101 estimated charge time = %d mins" % new_value)
+                    self.addToTrace("0x101: estimated charge time = %d mins" % new_value)
                     self.estChargeTimeMins = new_value
                     
                 new_value = (int(message.data[5]) + int(message.data[6])*256) * 0.1
                 if(self.ratedCapacitykWh != new_value):
-                    self.addToTrace("0x101 ratedCapacity = %d kWh" % new_value)
+                    self.addToTrace("0x101: ratedCapacity = %d kWh" % new_value)
                     self.ratedCapacitykWh = new_value
 
 
@@ -660,33 +613,33 @@ class hardwareInterface():
                 self.lastReceptionTime = time()     # record time of CAN volts and current requests for timeout check
                 new_value = message.data[0]         # EV sends its CHAdeMO version in byte 0
                 if(self.evCdMversion != new_value):
-                    self.addToTrace("0x102 evCdMversion = %X" % new_value)
+                    self.addToTrace("0x102: evCdMversion = %X" % new_value)
                     self.evCdMversion = new_value
                     
                 new_value = int(message.data[1]) + int(message.data[2])*256
                 if(self.targetBatteryVoltage != new_value):
-                    self.addToTrace("0x102 targetBatteryVoltage = %d V" % new_value)
+                    self.addToTrace("0x102: targetBatteryVoltage = %d V" % new_value)
                     self.targetBatteryVoltage = new_value
 
                 new_value = message.data[3]
                 if(self.chargeCurrentRequest != new_value):
-                    self.addToTrace("0x102 chargeCurrentRequest = %d A" % new_value)
+                    self.addToTrace("0x102: chargeCurrentRequest = %d A" % new_value)
                     self.chargeCurrentRequest = new_value
 
                 new_value = message.data[4]
                 if(self.evFaultBits != new_value):
-                    self.addToTrace("0x102 evFaultBits = %X" % new_value)
+                    self.addToTrace("0x102: evFaultBits = %X" % new_value)
                     self.evFaultBits = new_value
 
                 new_value = message.data[5]
                 if(self.evStatusBits != new_value):
-                    self.addToTrace("0x102 evStatusBits = %X" % new_value)
+                    self.addToTrace("0x102:evStatusBits = %X" % new_value)
                     self.evStatusBits = new_value
 
                 if self.socPercentFactor > 0:       # (it is used in the next calculation)
                     new_value = message.data[6] / self.socPercentFactor * 100
                     if(self.evStateOfCharge != new_value):
-                        self.addToTrace("0x102 evStateOfCharge = %d %%" % new_value)
+                        self.addToTrace("0x102: evStateOfCharge = %d %%" % new_value)
                         self.evStateOfCharge = new_value
 
                 # send messages 0x108 and 0x109 after 0x102 received
@@ -700,6 +653,62 @@ class hardwareInterface():
                 self.addToTrace("CHAdeMO: No current limit update for over 1s, setting current to 0")
             self.accuMaxCurrent = 0
             self.canActive = False 
+
+
+# -----------------------------     Start of charger simulation and test functions      -----------------------------
+    
+    # The next two functions are only called by the charger simulation function, and by the test routine __main__ 
+    # note that they depend on CAN variables being compared, so these are initialised to valid values, and NOT 'None'
+    
+    def setChargerParameters(self, maxVoltage, maxCurrent):
+        # if maxVoltage or maxCurrent has changed, log this to trace
+        if(self.maxChargerVoltage != maxVoltage):
+            self.addToTrace("Setting charger _available_ Voltage = %d V" % maxVoltage)
+            self.maxChargerVoltage = int(maxVoltage)
+        if(self.maxChargerCurrent != maxCurrent):
+            self.addToTrace("Setting charger _available_ Current = %d A" % maxCurrent)
+            self.maxChargerCurrent = int(maxCurrent)
+
+    def setChargerVoltageAndCurrent(self, voltageNow, currentNow):
+        # if voltageNow or currentNow has changed, log this to trace
+        if(self.chargerVoltage != voltageNow):
+            self.addToTrace("Setting charger _actual_ Voltage = %d V" % voltageNow)
+            self.chargerVoltage = int(voltageNow)
+        if(self.chargerCurrent != currentNow):
+            self.addToTrace("Setting charger _actual_ Current = %d A" % currentNow)
+            self.chargerCurrent = int(currentNow)
+
+    def estimatedLBCvolts(self, soc_percent):
+        soc = max(0, min(soc_percent, 100))
+        # linear interpolation as 2 straight lines between:-
+        # 332v at SOC=0% to 360v at SOC=50%, to 400v at SOC=100% 
+        if(soc <= 50):
+            v = 332 + soc*28/50
+        if(soc>50):
+            v = 360 + (soc-50)*40/50
+        return int(v)
+     
+    def simulateChargerResponse(self):   # call this after mainfunction has updated all CAN values on each scan
+        # This emulates a typical charger by filtering the EV current requests with a first-order filter to produce the
+        # 'actual' output lagging current response.  The measured output terminal voltage is then calulated by adding the
+        # LBC voltage (estimated from the SOC%) to the volt-drop across the internal resistance of the HV battery.
+        # The estimated charger outputs will then be sent back to the EV in CAN message 0x109.
+        # The targetBatteryVoltage request from the EV appears not to change throughout the charging cycle.
+        # Simulate fast shutdown by setting output current filter to a fast rate if zero current is requested
+        # Get the volts and amps inputs from the EV values requested in message 0x102
+        current_in = self.chargeCurrentRequest    # updated by CAN message 0x102 from the EV
+        # process the current requests with a simple first-order filter
+        if(current_in > 0):   
+            self.current_out = int(self.chargerCurrent * 0.9 + current_in * 0.1)    # normal 10-sample filter
+        else:
+            self.current_out = int(self.chargerCurrent * 0.2 + current_in * 0.8)    # more rapid shutdown
+
+        # estimate the charger output voltage from LBC battery volts + (current * internal resistance)
+        internalResistance = 0.15      # empirical value based on DALA Nissan Leaf charging logs
+        self.voltage_out = self.estimatedLBCvolts(self.evStateOfCharge) + internalResistance * self.current_out
+        
+        # update the charger _actual_ values for when message 0x109 is sent on next scan
+        self.setChargerVoltageAndCurrent(self.voltage_out, self.current_out)
 
 pass    # end of class hardwareInterface
 
