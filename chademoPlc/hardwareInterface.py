@@ -362,7 +362,7 @@ class hardwareInterface():
         self.minChargerCurrent = None       # CAN-ID 0x100 - EV requests the maximum Volts/Amps it 'needs'
         self.minBatteryVoltage = None       
         self.maxBatteryVoltage = 0          # initialise to valid values (see above)
-        self.socPercentFactor = 100         # EV sets to 255 in 0x102 message
+        self.socPercentFactor = 100         # EV (ZE1+) sets to 255 in 0x102 message
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101 (calculated by EV)
         self.estChargeTimeMins = None
@@ -756,8 +756,8 @@ if __name__ == "__main__":
                 hwAddToTrace("# Start polling hardwareInterface to read GPIO inputs and monitor CAN-bus")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms from EV
             
-            if(hw.evChargePermit == 1):     # when EV sets hardware ChargePermit...
-                if(hw.evStatusBits & 0x08) == 0x08: # AND CAN status for ChargePermit is set
+            if(hw.evChargePermit == 1):     # when EV sets hardware ChargePermit (pin_k)...
+                if(hw.evStatusBits & 0x01) == 0x01: # AND CAN status for ChargePermit is also set
                     hw.setSS2_On()          # automatically enable EV contactors 
             else:
                 hw.setSS2_Off()

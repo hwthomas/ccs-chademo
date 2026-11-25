@@ -65,12 +65,12 @@ outputCurrent                   2       8        Intel      [3]     1       0|25
 
 statusBits for charger          40      8        Intel      [5]     1       0|255
 
-statusStation                   40      1        Intel      [5]     1       0|1
-faultStationMalfunction         41      1        Intel      [5]     1       0|1
-statusVehicleConnectorLock      42      1        Intel      [5]     1       0|1
-faultBatteryIncompatibility     43      1        Intel      [5]     1       0|1
-faultChargingSystemMalfunction  44      1        Intel      [5]     1       0|1
-statusChargerStopControl        45      1        Intel      [5]     1       0|1
+statusStation                   40      1  0x01
+faultStationMalfunction         41      1  0x02
+statusVehicleConnectorLock      42      1  0x04
+faultBatteryIncompatibility     43      1  0x08
+faultChargingSystemMalfunction  44      1  0x10
+statusChargerStopControl        45      1  0x20
 
 remainingChargingTime10s        48      8        Intel      [6]     10      0|2540  secs
 remainingChargingTimeMins       56      8        Intel      [7]     1       0|255   mins
