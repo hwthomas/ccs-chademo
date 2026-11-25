@@ -362,7 +362,7 @@ class hardwareInterface():
         self.minChargerCurrent = None       # CAN-ID 0x100 - EV requests the maximum Volts/Amps it 'needs'
         self.minBatteryVoltage = None       
         self.maxBatteryVoltage = 0          # initialise to valid values (see above)
-        self.socPercentFactor = 100
+        self.socPercentFactor = 100         # EV sets to 255 in 0x102 message
 
         self.maxChargeTimeMins = None       # CAN-ID 0x101 (calculated by EV)
         self.estChargeTimeMins = None
@@ -373,7 +373,7 @@ class hardwareInterface():
         self.chargeCurrentRequest = 0
         self.evFaultBits = None             # EV fault bits
         self.evStatusBits = 0               # EV status bits
-        self.evStateOfCharge = 50           # will be passed to charger emulation
+        self.evStateOfCharge = 50.0         # for charger simulation (float because factor=100/255)
 
         self.lastReceptionTime = 0.0        # last time EV requested current from the charger
 
@@ -637,9 +637,9 @@ class hardwareInterface():
                     self.evStatusBits = new_value
 
                 if self.socPercentFactor > 0:       # (it is used in the next calculation)
-                    new_value = message.data[6] / self.socPercentFactor * 100
+                    new_value = message.data[6] * 100.0 / self.socPercentFactor
                     if(self.evStateOfCharge != new_value):
-                        self.addToTrace("0x102: evStateOfCharge = %d %%" % new_value)
+                        self.addToTrace("0x102: evStateOfCharge = %f %%" % new_value)
                         self.evStateOfCharge = new_value
 
                 # send messages 0x108 and 0x109 after 0x102 received
@@ -746,26 +746,29 @@ if __name__ == "__main__":
     # monitored for timeouts, etc.  Initially, the loop is set to run for 450 mainfunction scans at ~31mS/scan
     # which is approximately 15secs. Inject comments into the trace by printing strings starting with '#'
     try:
-        for scan in range(0, 450):      
+        for scan in range(0, 500):  # 500 * 10mS ~= 5.0sec
+                 
             hw.mainfunction()               # poll hardwareInterface (GPIO and CAN-bus) on each scan
             hw.simulateChargerResponse()    # simulate charger response to current & voltage requests
-
-            if(hw.evChargePermit == 1):     # automatically enable EV contactors when EV sets ChargePermit
-                hw.setSS2_On()
-            else:
-                hw.setSS2_Off()
 
             # actions initiated at specific scan times  (scan_count * 30mS)               
             if (scan==0):           # print heading at start of log
                 hwAddToTrace("# Start polling hardwareInterface to read GPIO inputs and monitor CAN-bus")
                 hw.setSS1_On()      # activate charge signal d1/SS1 to start CAN comms from EV
             
+            if(hw.evChargePermit == 1):     # when EV sets hardware ChargePermit...
+                if(hw.evStatusBits & 0x08) == 0x08: # AND CAN status for ChargePermit is set
+                    hw.setSS2_On()          # automatically enable EV contactors 
+            else:
+                hw.setSS2_Off()
+
             if (scan==425):         # set EV current demand to zero 
                 hw.setChargerVoltageAndCurrent(0, 0)
                 hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
                 
-            sleep(0.03)             # wait for approx. scan time. ie 30mS sleep + 2mS computation
+            # scan time reduced to 10mS to examine EV startup times
+            sleep(0.009)             # wait for approx. scan time. ie 9mS sleep + 1mS computation
 
     except KeyboardInterrupt:       # ctrl-C quits if all else fails!
             pass
