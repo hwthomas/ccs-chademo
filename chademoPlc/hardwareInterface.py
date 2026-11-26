@@ -730,7 +730,7 @@ if __name__ == "__main__":
     # to the EV to observe functional changes and timings as they occur. Once these have been observed
     # and understood, a simpler test function can be used
     
-    print("Testing hardwareInterface for ~20s...")
+    print("Testing hardwareInterface for ~10s...")
     # create instance of hardwareInterface
     hw = hardwareInterface(hwAddToTrace)
     hw.plugged_in = True                    # charging session starts
@@ -746,7 +746,7 @@ if __name__ == "__main__":
     # monitored for timeouts, etc.  Initially, the loop is set to run for 450 mainfunction scans at ~31mS/scan
     # which is approximately 15secs. Inject comments into the trace by printing strings starting with '#'
     try:
-        for scan in range(0, 500):  # 500 * 10mS ~= 5.0sec
+        for scan in range(0, 1000):  # 1000 * 10mS ~= 10.0sec
                  
             hw.mainfunction()               # poll hardwareInterface (GPIO and CAN-bus) on each scan
             hw.simulateChargerResponse()    # simulate charger response to current & voltage requests
@@ -762,13 +762,13 @@ if __name__ == "__main__":
             else:
                 hw.setSS2_Off()
 
-            if (scan==425):         # set EV current demand to zero 
+            if (scan==525):         # set EV current demand to zero 
                 hw.setChargerVoltageAndCurrent(0, 0)
                 hw.setSS2_Off()     # EVSE disables d2/SS2 charge signal and EV contactors
                 hw.setSS1_Off()     # EVSE disables d1/SS1 charge signal and CAN comms
                 
             # scan time reduced to 10mS to examine EV startup times
-            sleep(0.009)             # wait for approx. scan time. ie 9mS sleep + 1mS computation
+            sleep(0.010)             # wait for approx. scan time. ie 10mS sleep + 1mS? computation
 
     except KeyboardInterrupt:       # ctrl-C quits if all else fails!
             pass
